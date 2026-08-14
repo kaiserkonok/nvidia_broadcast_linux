@@ -84,7 +84,7 @@ class PipelineController(QtCore.QObject):
     def _ensure_processor(self):
         if self._processor is None:
             from daemon.processor import MattingProcessor
-            self._processor = MattingProcessor(WEIGHTS)
+            self._processor = MattingProcessor()   # picks best available model
             self._processor.set_blur(14.0)
         return self._processor
 
@@ -119,3 +119,22 @@ class PipelineController(QtCore.QObject):
     def set_realism(self, on: bool):
         if self._processor:
             self._processor.set_realism(on)
+
+    def set_autoframe(self, on: bool):
+        if self._processor:
+            self._processor.set_autoframe(on)
+
+    def set_zoom(self, zoom: float):
+        if self._processor:
+            self._processor.set_zoom(zoom)
+
+    def set_vignette(self, amount: float):
+        if self._processor:
+            self._processor.set_vignette(amount)
+
+    def set_quality(self, quality: str):
+        # model reload is slow (~1-2s) — do it off the GUI thread
+        def work():
+            if self._processor:
+                self._processor.set_quality(quality)
+        threading.Thread(target=work, daemon=True).start()

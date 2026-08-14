@@ -39,6 +39,10 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.controller = controller
         self.audio = audio
+        self.settings = QtCore.QSettings("NVBroadcast", "NVBroadcast")
+        self._mode = "blur"
+        self._last_color = COLORS[0]
+        self._last_image = ""
         self.setWindowTitle("NVBroadcast")
         self.setWindowIcon(QtGui.QIcon.fromTheme("camera-web"))
         self.resize(1024, 600)
@@ -47,6 +51,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._build_ui()
         self._wire()
+        self._restore()                                    # load saved settings
         self._on_denoise_changed(self.audio.is_running())  # reflect current state
 
     # ---- layout -----------------------------------------------------------
@@ -122,7 +127,7 @@ class MainWindow(QtWidgets.QMainWindow):
             sw.setFixedSize(32, 32)
             sw.setStyleSheet(
                 f"background:rgb{c}; border:2px solid transparent; border-radius:8px;")
-            sw.clicked.connect(lambda _=False, col_=c: self.controller.set_color(col_))
+            sw.clicked.connect(lambda _=False, col_=c: self._on_color(col_))
             cg.addWidget(sw, i // 4, i % 4)
         col.addWidget(self.color_box)
 
@@ -134,11 +139,52 @@ class MainWindow(QtWidgets.QMainWindow):
         ib.addWidget(self.image_btn)
         col.addWidget(self.image_box)
 
-        col.addSpacing(6)
-        self.realism_chk = QtWidgets.QCheckBox("Photoreal edges (light-wrap + feather)")
+        col.addSpacing(10)
+        col.addWidget(self._h2("ENHANCE"))
+        self.realism_chk = QtWidgets.QCheckBox("Photoreal edges + colour match")
         self.realism_chk.setChecked(True)
         self.realism_chk.setStyleSheet("color:#8b94a3;")
         col.addWidget(self.realism_chk)
+
+        self.autoframe_chk = QtWidgets.QCheckBox("Auto-Frame (keep me centered)")
+        self.autoframe_chk.setStyleSheet("color:#8b94a3;")
+        col.addWidget(self.autoframe_chk)
+
+        self.zoom_box = QtWidgets.QWidget()
+        zb = QtWidgets.QVBoxLayout(self.zoom_box)
+        zb.setContentsMargins(0, 0, 0, 0)
+        self.zoom_label = QtWidgets.QLabel("Framing")
+        self.zoom_label.setStyleSheet("color:#8b94a3;")
+        self.zoom_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.zoom_slider.setRange(100, 170)   # tightness padding %
+        self.zoom_slider.setValue(115)
+        zb.addWidget(self.zoom_label)
+        zb.addWidget(self.zoom_slider)
+        col.addWidget(self.zoom_box)
+        self.zoom_box.setVisible(False)
+
+        self.vig_label = QtWidgets.QLabel("Vignette")
+        self.vig_label.setStyleSheet("color:#8b94a3;")
+        self.vig_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.vig_slider.setRange(0, 60)       # 0..0.60
+        self.vig_slider.setValue(0)
+        col.addWidget(self.vig_label)
+        col.addWidget(self.vig_slider)
+
+        qrow = QtWidgets.QHBoxLayout()
+        qrow.addWidget(self._h2("QUALITY"))
+        self.q_best = QtWidgets.QPushButton("Best")
+        self.q_bal = QtWidgets.QPushButton("Balanced")
+        self.q_group = QtWidgets.QButtonGroup(self)
+        for b, key in ((self.q_best, "best"), (self.q_bal, "balanced")):
+            b.setCheckable(True)
+            b.setMaximumHeight(26)
+            self.q_group.addButton(b)
+            b.clicked.connect(lambda _=False, k=key: self._on_quality(k))
+        self.q_best.setChecked(True)
+        qrow.addWidget(self.q_best)
+        qrow.addWidget(self.q_bal)
+        col.addLayout(qrow)
 
         col.addSpacing(10)
         col.addWidget(self._h2("MICROPHONE"))
@@ -166,7 +212,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.start_btn.clicked.connect(self._toggle)
         self.blur_slider.valueChanged.connect(self._on_blur)
         self.image_btn.clicked.connect(self._choose_image)
-        self.realism_chk.toggled.connect(self.controller.set_realism)
+        self.realism_chk.toggled.connect(self._on_realism)
+        self.autoframe_chk.toggled.connect(self._on_autoframe)
+        self.zoom_slider.valueChanged.connect(self._on_zoom)
+        self.vig_slider.valueChanged.connect(self._on_vignette)
         self.denoise_chk.toggled.connect(self._on_denoise)
         self.audio.changed.connect(self._on_denoise_changed)
         self.audio.error.connect(self._on_error)
@@ -178,6 +227,46 @@ class MainWindow(QtWidgets.QMainWindow):
         c.runningChanged.connect(self._on_running)
         c.error.connect(self._on_error)
 
+    # ---- settings persistence ---------------------------------------------
+    def _restore(self):
+        s = self.settings
+        self.blur_slider.setValue(int(s.value("blur", 14)))
+        self.vig_slider.setValue(int(s.value("vignette", 0)))
+        self.zoom_slider.setValue(int(s.value("zoom", 115)))
+        self.realism_chk.setChecked(s.value("realism", True, type=bool))
+        self.autoframe_chk.setChecked(s.value("autoframe", False, type=bool))
+        (self.q_bal if s.value("quality", "best") == "balanced" else self.q_best).setChecked(True)
+        self._mode = s.value("mode", "blur")
+        self._last_image = s.value("image", "")
+        self.mode_buttons.get(self._mode, self.mode_buttons["blur"]).setChecked(True)
+        self._show_mode_panels(self._mode)
+
+    def _persist(self):
+        s = self.settings
+        s.setValue("blur", self.blur_slider.value())
+        s.setValue("vignette", self.vig_slider.value())
+        s.setValue("zoom", self.zoom_slider.value())
+        s.setValue("realism", self.realism_chk.isChecked())
+        s.setValue("autoframe", self.autoframe_chk.isChecked())
+        s.setValue("quality", "best" if self.q_best.isChecked() else "balanced")
+        s.setValue("mode", self._mode)
+        s.setValue("image", self._last_image)
+
+    def _apply_all(self):
+        """Push every current UI value to a freshly-started processor."""
+        c = self.controller
+        c.set_quality("best" if self.q_best.isChecked() else "balanced")
+        c.set_realism(self.realism_chk.isChecked())
+        c.set_autoframe(self.autoframe_chk.isChecked())
+        c.set_zoom(self.zoom_slider.value() / 100.0)
+        c.set_vignette(self.vig_slider.value() / 100.0)
+        c.set_blur(float(self.blur_slider.value()))
+        if self._mode == "color":
+            c.set_color(self._last_color)
+        elif self._mode == "image" and self._last_image:
+            c.set_image(self._last_image)
+        c.set_mode(self._mode)
+
     # ---- slots ------------------------------------------------------------
     @QtCore.Slot()
     def _toggle(self):
@@ -188,8 +277,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.controller.start()
 
     def _on_mode(self, key):
+        self._mode = key
         self._show_mode_panels(key)
         self.controller.set_mode(key)
+        self._persist()
 
     def _show_mode_panels(self, key):
         self.blur_box.setVisible(key == "blur")
@@ -199,13 +290,42 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_blur(self, v):
         self.blur_label.setText(f"Blur strength · {v}")
         self.controller.set_blur(float(v))
+        self._persist()
+
+    def _on_color(self, c):
+        self._last_color = c
+        self.controller.set_color(c)
+
+    def _on_realism(self, on):
+        self.controller.set_realism(on)
+        self._persist()
+
+    def _on_autoframe(self, on):
+        self.zoom_box.setVisible(on)
+        self.controller.set_autoframe(on)
+        self._persist()
+
+    def _on_zoom(self, v):
+        self.controller.set_zoom(v / 100.0)
+        self._persist()
+
+    def _on_vignette(self, v):
+        self.vig_label.setText(f"Vignette · {v}%" if v else "Vignette")
+        self.controller.set_vignette(v / 100.0)
+        self._persist()
+
+    def _on_quality(self, key):
+        self.controller.set_quality(key)
+        self._persist()
 
     def _choose_image(self):
         path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "Choose background image", "",
             "Images (*.png *.jpg *.jpeg *.bmp *.webp)")
         if path:
+            self._last_image = path
             self.controller.set_image(path)
+            self._persist()
 
     @QtCore.Slot(QtGui.QImage)
     def _on_frame(self, img):
@@ -229,6 +349,8 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot(bool)
     def _on_running(self, running):
         self.start_btn.setEnabled(True)
+        if running:
+            self._apply_all()   # push saved/current settings to the fresh processor
         self.start_btn.setText("Stop Camera" if running else "Start Camera")
         self.start_btn.setProperty("running", "true" if running else "false")
         self.start_btn.style().unpolish(self.start_btn)
