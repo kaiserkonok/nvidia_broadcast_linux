@@ -137,7 +137,7 @@ cat > "$BIN_DIR/nvbroadcast" <<EOF
 DIR="$INSTALL_DIR"
 case "\${1:-}" in
   uninstall) exec "\$DIR/scripts/uninstall.sh" "\${@:2}" ;;
-  update)    curl -fsSL "$RAW_INSTALL" | bash ;;
+  update)    exec "\$DIR/scripts/update.sh" ;;
   *)         exec "\$DIR/scripts/run_app.sh" "\$@" ;;
 esac
 EOF
