@@ -44,8 +44,10 @@ Virtual Camera”** in your video app.
 - ⚡ **Real-time** — ~30 fps at 720p, GPU-resident end to end (RTX)
 - 🎛️ **Native desktop app** — live preview, controls, and a **system-tray** icon
   (closes to tray, like the real thing)
-- 🔌 **Works everywhere** — appears as a normal V4L2 webcam in OBS, Zoom, Meet,
-  Discord, browsers…
+- 🎙️ **Mic noise removal** — RTX-Voice-style denoise (DeepFilterNet) exposed as a
+  virtual microphone; kills keyboard, fan and room noise, keeps your voice natural
+- 🔌 **Works everywhere** — appears as a normal V4L2 webcam (and virtual mic) in
+  OBS, Zoom, Meet, Discord, browsers…
 - 🛠️ **Self-configuring** — sets up the `v4l2loopback` virtual camera for you, with
   a graphical password prompt only when it truly needs one
 
@@ -74,6 +76,7 @@ Open **NVBroadcast** from your app menu (or run `nvbroadcast`):
 
 - **Start/Stop Camera** — the webcam is used only while active
 - **Background** — Off · Blur (with strength) · Color · Image
+- **Remove background noise** — flip it on, then pick **“NVBroadcast Microphone”** in your call app
 - Close the window to tuck it into the **tray**; **Quit** from the tray to exit
 
 Then in OBS / Zoom / Meet / Discord, choose **“Broadcast Virtual Camera.”**
@@ -96,8 +99,8 @@ In OBS specifically: *Sources → Video Capture Device (V4L2) → Broadcast Virt
 - [x] Real-time background matting (blur / image / color)
 - [x] Native desktop app + system tray
 - [x] One-command install / uninstall
-- [ ] **Realism pass** — light-wrap, edge feathering, matched grain & depth-of-field
-- [ ] **Mic denoise** — RTX-Voice-style noise removal (DeepFilterNet) → virtual mic
+- [x] **Realism pass** — light-wrap + edge feathering (color-match & grain next)
+- [x] **Mic denoise** — RTX-Voice-style noise removal (DeepFilterNet) → virtual mic
 - [ ] Auto-frame & eye-contact
 - [ ] TensorRT engine for even lower latency
 

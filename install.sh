@@ -13,6 +13,7 @@ INSTALL_DIR="${NVB_HOME:-$HOME/.local/share/nvbroadcast}"
 BIN_DIR="$HOME/.local/bin"
 RAW_INSTALL="https://raw.githubusercontent.com/kaiserkonok/nvidia_broadcast_linux/${BRANCH}/install.sh"
 WEIGHTS_URL="https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth"
+DFPLUGIN_URL="https://github.com/Rikorose/DeepFilterNet/releases/download/v0.5.6/libdeep_filter_ladspa-0.5.6-x86_64-unknown-linux-gnu.so"
 
 # ---- pretty output ----------------------------------------------------------
 if [[ -t 1 ]]; then
@@ -114,6 +115,15 @@ if [[ ! -s models/weights/rvm_mobilenetv3.pth ]]; then
   curl -fL --progress-bar -o models/weights/rvm_mobilenetv3.pth "$WEIGHTS_URL" || die "Model download failed."
 fi
 ok "Model ready"
+
+# ---- mic denoise plugin -----------------------------------------------------
+step "Downloading the mic-denoise plugin (50 MB)"
+mkdir -p audio/lib
+if [[ ! -s audio/lib/libdeep_filter_ladspa.so ]]; then
+  curl -fL --progress-bar -o audio/lib/libdeep_filter_ladspa.so "$DFPLUGIN_URL" \
+    || warn "Mic-denoise plugin download failed — video still works; denoise can be added later."
+fi
+ok "Mic-denoise plugin ready"
 
 # ---- virtual camera ---------------------------------------------------------
 step "Configuring the virtual camera (needs sudo)"

@@ -13,6 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
 
 from PySide6 import QtGui, QtWidgets  # noqa: E402
 
+from .audio import AudioController  # noqa: E402
 from .main_window import MainWindow  # noqa: E402
 from .pipeline_controller import PipelineController  # noqa: E402
 
@@ -24,7 +25,8 @@ def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     controller = PipelineController()
-    win = MainWindow(controller)
+    audio = AudioController()
+    win = MainWindow(controller, audio)
 
     # ---- system tray ------------------------------------------------------
     icon = QtGui.QIcon.fromTheme("camera-web")
@@ -61,6 +63,10 @@ def main():
 
     def do_quit():
         controller.stop()
+        import subprocess
+
+        from .audio import SCRIPT
+        subprocess.run([SCRIPT, "stop"], capture_output=True)  # no orphan mic
         win._allow_close = True
         tray.hide()
         app.quit()

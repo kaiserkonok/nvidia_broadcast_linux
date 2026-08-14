@@ -8,4 +8,6 @@ models/engines/*
 *.onnx
 *.engine
 *.pth
+audio/lib/*.so
+!audio/lib/.gitkeep
 .DS_Store

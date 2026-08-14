@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from .audio import AudioController
 from .pipeline_controller import PipelineController
 
 COLORS = [
@@ -34,9 +35,10 @@ QSlider::handle:horizontal { background:#54a0ff; width:16px; margin:-6px 0;
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, controller: PipelineController):
+    def __init__(self, controller: PipelineController, audio: AudioController):
         super().__init__()
         self.controller = controller
+        self.audio = audio
         self.setWindowTitle("NVBroadcast")
         self.setWindowIcon(QtGui.QIcon.fromTheme("camera-web"))
         self.resize(1024, 600)
@@ -45,6 +47,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._build_ui()
         self._wire()
+        self._on_denoise_changed(self.audio.is_running())  # reflect current state
 
     # ---- layout -----------------------------------------------------------
     def _build_ui(self):
@@ -137,6 +140,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.realism_chk.setStyleSheet("color:#8b94a3;")
         col.addWidget(self.realism_chk)
 
+        col.addSpacing(10)
+        col.addWidget(self._h2("MICROPHONE"))
+        self.denoise_chk = QtWidgets.QCheckBox("Remove background noise")
+        self.denoise_chk.setStyleSheet("color:#8b94a3;")
+        col.addWidget(self.denoise_chk)
+
         col.addStretch(1)
         hint = QtWidgets.QLabel(
             "In OBS / Zoom / Meet pick “Broadcast Virtual Camera”.")
@@ -158,6 +167,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.blur_slider.valueChanged.connect(self._on_blur)
         self.image_btn.clicked.connect(self._choose_image)
         self.realism_chk.toggled.connect(self.controller.set_realism)
+        self.denoise_chk.toggled.connect(self._on_denoise)
+        self.audio.changed.connect(self._on_denoise_changed)
+        self.audio.error.connect(self._on_error)
 
         c = self.controller
         c.frameReady.connect(self._on_frame)
@@ -225,6 +237,22 @@ class MainWindow(QtWidgets.QMainWindow):
             self.status.setText("○ Stopped")
             self.preview.setPixmap(QtGui.QPixmap())
             self.preview.setText("Press Start")
+
+    def _on_denoise(self, on):
+        self.denoise_chk.setEnabled(False)
+        self.denoise_chk.setText("Remove background noise  (starting…)" if on
+                                 else "Remove background noise  (stopping…)")
+        self.audio.set_enabled(on)
+
+    @QtCore.Slot(bool)
+    def _on_denoise_changed(self, running):
+        self.denoise_chk.blockSignals(True)
+        self.denoise_chk.setChecked(running)
+        self.denoise_chk.blockSignals(False)
+        self.denoise_chk.setEnabled(True)
+        self.denoise_chk.setText(
+            'Remove background noise  ·  pick “NVBroadcast Microphone”' if running
+            else "Remove background noise")
 
     @QtCore.Slot(str)
     def _on_error(self, msg):

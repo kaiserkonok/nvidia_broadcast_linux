@@ -19,6 +19,8 @@ fi
 # stop anything running
 pkill -f "python -m app" 2>/dev/null || true
 pkill -f "python -m ui"  2>/dev/null || true
+[[ -x "$INSTALL_DIR/scripts/mic_denoise.sh" ]] && \
+  "$INSTALL_DIR/scripts/mic_denoise.sh" stop >/dev/null 2>&1 || true
 
 # menu entry, autostart, launcher
 rm -f "$APPS" "$AUTOSTART" "$BIN_DIR/nvbroadcast"
