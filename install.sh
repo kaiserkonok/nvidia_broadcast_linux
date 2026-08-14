@@ -46,10 +46,20 @@ else
   warn "No NVIDIA GPU detected — NVBroadcast is built for RTX cards; it may be slow without one."
 fi
 
+# ---- admin access (ask once, up front) --------------------------------------
+step "Administrator access"
+say "  ${DIM}NVBroadcast needs your password to install system packages and set up the camera.${X}"
+sudo -v || die "sudo is required to install NVBroadcast."
+# keep the sudo timestamp fresh through the long downloads (so it won't re-ask)
+( while kill -0 "$$" 2>/dev/null; do sudo -n true 2>/dev/null; sleep 50; done ) &
+SUDO_KEEPALIVE=$!
+trap 'kill "$SUDO_KEEPALIVE" 2>/dev/null || true' EXIT
+ok "Authorized"
+
 # ---- system dependencies ----------------------------------------------------
-step "Installing system packages (needs sudo)"
+step "Installing system packages"
 sudo apt-get update -qq
-sudo apt-get install -y -qq \
+sudo apt-get install -y \
   git python3 python3-venv python3-pip \
   v4l2loopback-dkms v4l-utils \
   libxcb-cursor0 libxkbcommon0 \
@@ -70,18 +80,20 @@ fi
 cd "$INSTALL_DIR"
 
 # ---- python environment -----------------------------------------------------
-step "Building the Python environment ${DIM}(downloads PyTorch/CUDA — a few GB, grab a coffee)${X}"
+step "Building the Python environment"
+say "  ${DIM}This downloads PyTorch + CUDA (~3 GB). The progress bars below are live —${X}"
+say "  ${DIM}it's working even when a download sits at one line for a while.${X}"
 python3 -m venv .venv
 ./.venv/bin/python -m pip install --upgrade -q pip
-./.venv/bin/pip install -q torch torchvision --index-url https://download.pytorch.org/whl/cu128
-./.venv/bin/pip install -q numpy opencv-python pyvirtualcam PySide6 flask
+./.venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+./.venv/bin/pip install numpy opencv-python pyvirtualcam PySide6 flask
 ok "Python environment ready"
 
 # ---- model ------------------------------------------------------------------
 step "Downloading the matting model (15 MB)"
 mkdir -p models/weights
 if [[ ! -s models/weights/rvm_mobilenetv3.pth ]]; then
-  curl -fsSL -o models/weights/rvm_mobilenetv3.pth "$WEIGHTS_URL" || die "Model download failed."
+  curl -fL --progress-bar -o models/weights/rvm_mobilenetv3.pth "$WEIGHTS_URL" || die "Model download failed."
 fi
 ok "Model ready"
 
