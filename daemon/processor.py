@@ -33,28 +33,55 @@ class MattingProcessor(Processor):
 
     def __init__(
         self,
-        weights: str,
+        weights_dir: str | None = None,
         device: str = "cuda",
-        variant: str = "mobilenetv3",
+        quality: str = "best",           # best (resnet50) | balanced (mobilenetv3)
         downsample_ratio: float = 0.25,
         fp16: bool = True,
     ):
+        import os
+
         import torch  # local import so Passthrough works without torch
 
+        from .autoframe import AutoFrame
         from .compositor import Compositor
-        from .matting import Matting
 
         self.torch = torch
         self.device = torch.device(device)
-        self.matting = Matting(
-            weights, variant=variant, device=device,
-            downsample_ratio=downsample_ratio, fp16=fp16,
-        )
-        from .autoframe import AutoFrame
+        self.downsample_ratio = downsample_ratio
+        self.fp16 = fp16
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.weights_dir = weights_dir or os.path.join(root, "models", "weights")
+
+        self.quality = None
+        self.matting = None
+        self._load(quality)              # picks the best available model
 
         self.compositor = Compositor(device=device)
         self.autoframe = AutoFrame()
         self.enabled = True   # when False, process() is a passthrough
+
+    def _load(self, quality: str):
+        import os
+
+        from .matting import Matting
+        variant = "resnet50" if quality == "best" else "mobilenetv3"
+        w = os.path.join(self.weights_dir, f"rvm_{variant}.pth")
+        if not os.path.exists(w):        # fall back to whatever is present
+            variant, quality = "mobilenetv3", "balanced"
+            w = os.path.join(self.weights_dir, "rvm_mobilenetv3.pth")
+        if self.matting is not None:
+            self.matting.close()
+        self.matting = Matting(
+            w, variant=variant, device=str(self.device),
+            downsample_ratio=self.downsample_ratio, fp16=self.fp16,
+        )
+        self.quality = quality
+
+    def set_quality(self, quality: str):
+        """best = resnet50 (sharpest edges), balanced = mobilenetv3 (lighter)."""
+        if quality != self.quality:
+            self._load(quality)
 
     # convenience passthroughs to configure the background live
     def set_blur(self, sigma: float):
@@ -88,6 +115,12 @@ class MattingProcessor(Processor):
 
     def set_zoom(self, zoom: float):
         self.autoframe.zoom = float(zoom)
+
+    def set_vignette(self, amount: float):
+        self.compositor.vignette = float(amount)
+
+    def set_grain(self, amount: float):
+        self.compositor.grain = float(amount)
 
     def process(self, rgb: np.ndarray) -> np.ndarray:
         # Run matting if we need a background effect OR auto-frame (which needs

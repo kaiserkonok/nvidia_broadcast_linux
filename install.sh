@@ -13,6 +13,7 @@ INSTALL_DIR="${NVB_HOME:-$HOME/.local/share/nvbroadcast}"
 BIN_DIR="$HOME/.local/bin"
 RAW_INSTALL="https://raw.githubusercontent.com/kaiserkonok/nvidia_broadcast_linux/${BRANCH}/install.sh"
 WEIGHTS_URL="https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth"
+WEIGHTS_URL_BEST="https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_resnet50.pth"
 DFPLUGIN_URL="https://github.com/Rikorose/DeepFilterNet/releases/download/v0.5.6/libdeep_filter_ladspa-0.5.6-x86_64-unknown-linux-gnu.so"
 
 # ---- pretty output ----------------------------------------------------------
@@ -109,12 +110,16 @@ python3 -m venv .venv
 ok "Python environment ready"
 
 # ---- model ------------------------------------------------------------------
-step "Downloading the matting model (15 MB)"
+step "Downloading the matting models (~120 MB)"
 mkdir -p models/weights
 if [[ ! -s models/weights/rvm_mobilenetv3.pth ]]; then
   curl -fL --progress-bar -o models/weights/rvm_mobilenetv3.pth "$WEIGHTS_URL" || die "Model download failed."
 fi
-ok "Model ready"
+if [[ ! -s models/weights/rvm_resnet50.pth ]]; then
+  curl -fL --progress-bar -o models/weights/rvm_resnet50.pth "$WEIGHTS_URL_BEST" \
+    || warn "Best-quality model download failed — will use the lighter one."
+fi
+ok "Models ready"
 
 # ---- mic denoise plugin -----------------------------------------------------
 step "Downloading the mic-denoise plugin (50 MB)"

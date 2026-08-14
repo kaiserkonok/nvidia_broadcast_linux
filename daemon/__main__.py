@@ -18,7 +18,7 @@ def build_processor(args):
         return Passthrough()
     from .processor import MattingProcessor
 
-    mp = MattingProcessor(WEIGHTS, downsample_ratio=args.downsample)
+    mp = MattingProcessor(downsample_ratio=args.downsample)
     if args.mode == "blur":
         mp.set_blur(args.blur_sigma)
     elif args.mode == "image":

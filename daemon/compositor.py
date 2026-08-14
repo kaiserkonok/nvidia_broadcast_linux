@@ -85,6 +85,11 @@ class Compositor:
         self.match_smooth = 0.9      # temporal EMA on the grade (anti-flicker)
         self._grade_gain: torch.Tensor | None = None
 
+        # ---- finishing (applies in every mode) ------------------------------
+        self.vignette = 0.0          # 0..1 subtle edge darkening
+        self._vig_mask: torch.Tensor | None = None
+        self._vig_hw: tuple[int, int] | None = None
+
     # ---- background configuration -------------------------------------------
     def set_blur(self, sigma: float):
         self.mode = "blur"
@@ -199,6 +204,19 @@ class Compositor:
         screened = 1.0 - (1.0 - comp) * (1.0 - bg_soft)
         return comp * (1.0 - w) + screened * w
 
+    def _vignette(self, out: torch.Tensor) -> torch.Tensor:
+        if self.vignette <= 0:
+            return out
+        _, H, W = out.shape
+        if self._vig_hw != (H, W):
+            yy = torch.linspace(-1, 1, H, device=self.device).view(H, 1)
+            xx = torch.linspace(-1, 1, W, device=self.device).view(1, W)
+            r = (xx * xx + yy * yy).sqrt()
+            self._vig_mask = (1.0 - ((r - 0.6) / 0.8).clamp(0.0, 1.0)).clamp(0.0, 1.0)
+            self._vig_hw = (H, W)
+        m = 1.0 - self.vignette * (1.0 - self._vig_mask)
+        return out * m
+
     # ---- compositing --------------------------------------------------------
     @torch.inference_mode()
     def composite(self, fgr: torch.Tensor, pha: torch.Tensor,
@@ -206,12 +224,14 @@ class Compositor:
         """fgr (3,H,W), pha (1,H,W), src (3,H,W) -> out (3,H,W), all GPU float32."""
         bg = self._background(src)
         if not self.realism:
-            return (fgr * pha + bg * (1.0 - pha)).clamp(0.0, 1.0)
+            out = fgr * pha + bg * (1.0 - pha)
+        else:
+            a = self._refine_matte(pha)
+            fgr = self._scene_match(fgr, bg, a)
+            out = fgr * a + bg * (1.0 - a)
+            out = self._light_wrap(out, bg, a)
 
-        a = self._refine_matte(pha)
-        fgr = self._scene_match(fgr, bg, a)
-        out = fgr * a + bg * (1.0 - a)
-        out = self._light_wrap(out, bg, a)
+        out = self._vignette(out)
         if self.grain > 0:
-            out = (out + torch.randn_like(out) * self.grain).clamp(0.0, 1.0)
+            out = out + torch.randn_like(out) * self.grain
         return out.clamp(0.0, 1.0)

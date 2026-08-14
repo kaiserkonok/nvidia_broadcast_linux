@@ -46,7 +46,7 @@ def main():
         return 1
     print(f"grabbed {len(frames)} frames @ {frames[0].shape[1]}x{frames[0].shape[0]}")
 
-    mp = MattingProcessor(cfg_weights := "models/weights/rvm_mobilenetv3.pth")
+    mp = MattingProcessor()
 
     # warmup (cudnn autotune, lazy alloc) — feed the recurrent net a few frames
     for f in frames[:15]:

@@ -35,7 +35,7 @@ class Engine:
         self.cfg = cfg
         self.preview_width = preview_width
         self.preview_q = preview_q
-        self.processor = MattingProcessor(WEIGHTS, downsample_ratio=0.25)
+        self.processor = MattingProcessor(downsample_ratio=0.25)
         self.processor.set_blur(14.0)
 
         self._jpeg: bytes | None = None
