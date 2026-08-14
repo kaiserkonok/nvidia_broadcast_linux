@@ -36,7 +36,7 @@ class MattingProcessor(Processor):
         weights_dir: str | None = None,
         device: str = "cuda",
         quality: str = "best",           # best (resnet50) | balanced (mobilenetv3)
-        downsample_ratio: float = 0.25,
+        downsample_ratio: float = 0.4,   # higher internal res -> sharper edges
         fp16: bool = True,
     ):
         import os
