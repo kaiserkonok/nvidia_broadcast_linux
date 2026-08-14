@@ -74,6 +74,17 @@ class Compositor:
         self.grain = 0.0             # unify texture (std in [0,1], e.g. 0.004)
         self._pha_prev: torch.Tensor | None = None
 
+        # ---- scene match: subject adopts the background's light -------------
+        # The biggest "pasted-on" cue is a colour/exposure mismatch between the
+        # subject and the new background. We gently grade the foreground toward
+        # the background's white balance and tonal range (kept subtle + smoothed
+        # over time so faces never flicker or wash out).
+        self.scene_match = True
+        self.wb_strength = 0.35      # pull fg white balance toward bg
+        self.exposure_strength = 0.18  # pull fg brightness toward bg (kept low)
+        self.match_smooth = 0.9      # temporal EMA on the grade (anti-flicker)
+        self._grade_gain: torch.Tensor | None = None
+
     # ---- background configuration -------------------------------------------
     def set_blur(self, sigma: float):
         self.mode = "blur"
@@ -141,6 +152,38 @@ class Compositor:
             a = _separable_blur(a, self.feather_sigma)
         return a.clamp(0.0, 1.0)
 
+    def _scene_match(self, fgr: torch.Tensor, bg: torch.Tensor,
+                     pha: torch.Tensor) -> torch.Tensor:
+        """Grade the foreground toward the background's light.
+
+        Decomposes the shift into white balance (per-channel colour ratio) and
+        exposure (overall luminance), each with its own strength, then smooths
+        the gain over time so faces don't flicker. Gains are clamped so a dark
+        subject on a bright scene is nudged, never blown out.
+        """
+        if not self.scene_match or (self.wb_strength <= 0 and self.exposure_strength <= 0):
+            return fgr
+        eps = 1e-4
+        w = pha.sum() + eps
+        fg_mean = (fgr * pha).sum(dim=(1, 2), keepdim=True) / w   # alpha-weighted
+        bg_mean = bg.mean(dim=(1, 2), keepdim=True)
+        fg_lum = fg_mean.mean().clamp_min(eps)
+        bg_lum = bg_mean.mean().clamp_min(eps)
+
+        fg_ratio = fg_mean / fg_lum                              # chroma, luminance-free
+        bg_ratio = bg_mean / bg_lum
+        target_ratio = fg_ratio * (1 - self.wb_strength) + bg_ratio * self.wb_strength
+        target_lum = fg_lum * (1 - self.exposure_strength) + bg_lum * self.exposure_strength
+        gain = (target_ratio * target_lum) / (fg_mean + eps)
+        gain = gain.clamp(0.6, 1.7)
+
+        if self._grade_gain is None or self._grade_gain.shape != gain.shape:
+            self._grade_gain = gain
+        else:
+            self._grade_gain = (self.match_smooth * self._grade_gain
+                                + (1 - self.match_smooth) * gain)
+        return (fgr * self._grade_gain).clamp(0.0, 1.0)
+
     def _light_wrap(self, comp: torch.Tensor, bg: torch.Tensor,
                     pha: torch.Tensor) -> torch.Tensor:
         """Bleed softened background light around the subject edge (screen blend).
@@ -166,6 +209,7 @@ class Compositor:
             return (fgr * pha + bg * (1.0 - pha)).clamp(0.0, 1.0)
 
         a = self._refine_matte(pha)
+        fgr = self._scene_match(fgr, bg, a)
         out = fgr * a + bg * (1.0 - a)
         out = self._light_wrap(out, bg, a)
         if self.grain > 0:

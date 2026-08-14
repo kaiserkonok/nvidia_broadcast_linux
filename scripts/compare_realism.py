@@ -78,6 +78,7 @@ def main():
         naive = to_bgr(comp.composite(fgr, pha, src3))
         comp.realism = True
         comp._pha_prev = None
+        comp._grade_gain = None
         real = to_bgr(comp.composite(fgr, pha, src3))
         bar = np.full((naive.shape[0], 6, 3), 40, np.uint8)
         cv2.imwrite(f"{OUT}/realism_{name}.png", np.hstack([naive, bar, real]))
