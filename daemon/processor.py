@@ -64,6 +64,19 @@ class MattingProcessor(Processor):
     def _load(self, quality: str):
         import os
 
+        if quality == "ultra":           # BiRefNet: max quality, lower fps
+            try:
+                from .birefnet import BiRefNetMatting
+                new = BiRefNetMatting(device=str(self.device), fp16=self.fp16)
+            except Exception as e:        # missing deps / download fail -> keep current
+                print(f"[processor] Ultra unavailable ({e}); staying on {self.quality}")
+                return
+            if self.matting is not None:
+                self.matting.close()
+            self.matting = new
+            self.quality = "ultra"
+            return
+
         from .matting import Matting
         variant = "resnet50" if quality == "best" else "mobilenetv3"
         w = os.path.join(self.weights_dir, f"rvm_{variant}.pth")
@@ -79,7 +92,7 @@ class MattingProcessor(Processor):
         self.quality = quality
 
     def set_quality(self, quality: str):
-        """best = resnet50 (sharpest edges), balanced = mobilenetv3 (lighter)."""
+        """ultra = BiRefNet (SOTA, lower fps) | best = resnet50 | balanced = mobilenetv3."""
         if quality != self.quality:
             self._load(quality)
 

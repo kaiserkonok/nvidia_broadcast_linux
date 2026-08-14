@@ -173,17 +173,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
         qrow = QtWidgets.QHBoxLayout()
         qrow.addWidget(self._h2("QUALITY"))
+        self.q_bal = QtWidgets.QPushButton("Fast")
         self.q_best = QtWidgets.QPushButton("Best")
-        self.q_bal = QtWidgets.QPushButton("Balanced")
+        self.q_ultra = QtWidgets.QPushButton("Ultra")
+        self.q_bal.setToolTip("MobileNetV3 — lightest")
+        self.q_best.setToolTip("RVM ResNet-50 — sharp edges, real-time")
+        self.q_ultra.setToolTip("BiRefNet — SOTA quality, ~12 fps (best for good light / recording)")
         self.q_group = QtWidgets.QButtonGroup(self)
-        for b, key in ((self.q_best, "best"), (self.q_bal, "balanced")):
+        for b, key in ((self.q_bal, "balanced"), (self.q_best, "best"), (self.q_ultra, "ultra")):
             b.setCheckable(True)
             b.setMaximumHeight(26)
             self.q_group.addButton(b)
             b.clicked.connect(lambda _=False, k=key: self._on_quality(k))
         self.q_best.setChecked(True)
-        qrow.addWidget(self.q_best)
         qrow.addWidget(self.q_bal)
+        qrow.addWidget(self.q_best)
+        qrow.addWidget(self.q_ultra)
         col.addLayout(qrow)
 
         col.addSpacing(10)
@@ -235,7 +240,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zoom_slider.setValue(int(s.value("zoom", 115)))
         self.realism_chk.setChecked(s.value("realism", True, type=bool))
         self.autoframe_chk.setChecked(s.value("autoframe", False, type=bool))
-        (self.q_bal if s.value("quality", "best") == "balanced" else self.q_best).setChecked(True)
+        {"balanced": self.q_bal, "best": self.q_best, "ultra": self.q_ultra}.get(
+            s.value("quality", "best"), self.q_best).setChecked(True)
         self._mode = s.value("mode", "blur")
         self._last_image = s.value("image", "")
         self.mode_buttons.get(self._mode, self.mode_buttons["blur"]).setChecked(True)
@@ -248,14 +254,19 @@ class MainWindow(QtWidgets.QMainWindow):
         s.setValue("zoom", self.zoom_slider.value())
         s.setValue("realism", self.realism_chk.isChecked())
         s.setValue("autoframe", self.autoframe_chk.isChecked())
-        s.setValue("quality", "best" if self.q_best.isChecked() else "balanced")
+        s.setValue("quality", self._quality_key())
         s.setValue("mode", self._mode)
         s.setValue("image", self._last_image)
+
+    def _quality_key(self):
+        if self.q_ultra.isChecked():
+            return "ultra"
+        return "balanced" if self.q_bal.isChecked() else "best"
 
     def _apply_all(self):
         """Push every current UI value to a freshly-started processor."""
         c = self.controller
-        c.set_quality("best" if self.q_best.isChecked() else "balanced")
+        c.set_quality(self._quality_key())
         c.set_realism(self.realism_chk.isChecked())
         c.set_autoframe(self.autoframe_chk.isChecked())
         c.set_zoom(self.zoom_slider.value() / 100.0)

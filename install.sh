@@ -107,6 +107,8 @@ python3 -m venv .venv
 ./.venv/bin/python -m pip install --upgrade -q pip
 ./.venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 ./.venv/bin/pip install numpy opencv-python pyvirtualcam PySide6 flask
+# Ultra tier (BiRefNet) deps — the model itself downloads on first use
+./.venv/bin/pip install transformers timm einops kornia
 ok "Python environment ready"
 
 # ---- model ------------------------------------------------------------------
