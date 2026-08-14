@@ -121,6 +121,13 @@ class MattingProcessor(Processor):
         """Toggle the photoreal pass (edge feather + light-wrap)."""
         self.compositor.realism = bool(on)
 
+    def set_relight(self, on: bool):
+        """Toggle Studio Light (subject auto exposure/white-balance/contrast)."""
+        self.compositor.relight = bool(on)
+
+    def set_relight_strength(self, v: float):
+        self.compositor.relight_strength = float(v)
+
     def set_autoframe(self, on: bool):
         self.autoframe.enabled = bool(on)
         if not on:
@@ -139,9 +146,9 @@ class MattingProcessor(Processor):
         self.compositor.dof = float(amount)
 
     def process(self, rgb: np.ndarray) -> np.ndarray:
-        # Run matting if we need a background effect OR auto-frame (which needs
-        # the alpha to locate the subject).
-        if not self.enabled and not self.autoframe.enabled:
+        # Run matting if we need a background effect, Studio Light, or auto-frame
+        # (each needs the alpha to locate the subject).
+        if not self.enabled and not self.autoframe.enabled and not self.compositor.relight:
             return rgb
         torch = self.torch
         with torch.inference_mode():
@@ -154,7 +161,13 @@ class MattingProcessor(Processor):
                 .div_(255.0)
             )
             fgr, pha = self.matting.infer(src)
-            out = self.compositor.composite(fgr, pha, src[0]) if self.enabled else src[0]
+            if self.enabled:
+                out = self.compositor.composite(fgr, pha, src[0])
+            elif self.compositor.relight:
+                # no background change, but relight the subject over the scene
+                out = self.compositor.relight_passthrough(fgr, pha, src[0])
+            else:
+                out = src[0]
             out = self.autoframe.apply(out, pha)
             out_u8 = (
                 out.clamp_(0.0, 1.0)

@@ -146,6 +146,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.realism_chk.setStyleSheet("color:#8b94a3;")
         col.addWidget(self.realism_chk)
 
+        self.relight_chk = QtWidgets.QCheckBox("Studio Light")
+        self.relight_chk.setChecked(True)
+        self.relight_chk.setToolTip(
+            "Auto-fix bad room lighting on your face — works in every mode")
+        self.relight_chk.setStyleSheet("color:#8b94a3;")
+        col.addWidget(self.relight_chk)
+
+        self.relight_box = QtWidgets.QWidget()
+        rlb = QtWidgets.QVBoxLayout(self.relight_box)
+        rlb.setContentsMargins(0, 0, 0, 0)
+        self.relight_label = QtWidgets.QLabel("Light intensity · 60%")
+        self.relight_label.setStyleSheet("color:#8b94a3;")
+        self.relight_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.relight_slider.setRange(0, 100)
+        self.relight_slider.setValue(60)
+        rlb.addWidget(self.relight_label)
+        rlb.addWidget(self.relight_slider)
+        col.addWidget(self.relight_box)
+
         self.autoframe_chk = QtWidgets.QCheckBox("Auto-Frame")
         self.autoframe_chk.setStyleSheet("color:#8b94a3;")
         col.addWidget(self.autoframe_chk)
@@ -219,6 +238,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.blur_slider.valueChanged.connect(self._on_blur)
         self.image_btn.clicked.connect(self._choose_image)
         self.realism_chk.toggled.connect(self._on_realism)
+        self.relight_chk.toggled.connect(self._on_relight_toggle)
+        self.relight_slider.valueChanged.connect(self._on_relight_strength)
         self.autoframe_chk.toggled.connect(self._on_autoframe)
         self.zoom_slider.valueChanged.connect(self._on_zoom)
         self.vig_slider.valueChanged.connect(self._on_vignette)
@@ -240,6 +261,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.vig_slider.setValue(int(s.value("vignette", 0)))
         self.zoom_slider.setValue(int(s.value("zoom", 115)))
         self.realism_chk.setChecked(s.value("realism", True, type=bool))
+        self.relight_chk.setChecked(s.value("relight", True, type=bool))
+        self.relight_slider.setValue(int(s.value("relight_strength", 60)))
+        self.relight_box.setVisible(self.relight_chk.isChecked())
         self.autoframe_chk.setChecked(s.value("autoframe", False, type=bool))
         {"balanced": self.q_bal, "best": self.q_best, "ultra": self.q_ultra}.get(
             s.value("quality", "best"), self.q_best).setChecked(True)
@@ -254,6 +278,8 @@ class MainWindow(QtWidgets.QMainWindow):
         s.setValue("vignette", self.vig_slider.value())
         s.setValue("zoom", self.zoom_slider.value())
         s.setValue("realism", self.realism_chk.isChecked())
+        s.setValue("relight", self.relight_chk.isChecked())
+        s.setValue("relight_strength", self.relight_slider.value())
         s.setValue("autoframe", self.autoframe_chk.isChecked())
         s.setValue("quality", self._quality_key())
         s.setValue("mode", self._mode)
@@ -269,6 +295,8 @@ class MainWindow(QtWidgets.QMainWindow):
         c = self.controller
         c.set_quality(self._quality_key())
         c.set_realism(self.realism_chk.isChecked())
+        c.set_relight(self.relight_chk.isChecked())
+        c.set_relight_strength(self.relight_slider.value() / 100.0)
         c.set_autoframe(self.autoframe_chk.isChecked())
         c.set_zoom(self.zoom_slider.value() / 100.0)
         c.set_vignette(self.vig_slider.value() / 100.0)
@@ -310,6 +338,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _on_realism(self, on):
         self.controller.set_realism(on)
+        self._persist()
+
+    def _on_relight_toggle(self, on):
+        self.relight_box.setVisible(on)
+        self.controller.set_relight(on)
+        self._persist()
+
+    def _on_relight_strength(self, v):
+        self.relight_label.setText(f"Light intensity · {v}%")
+        self.controller.set_relight_strength(v / 100.0)
         self._persist()
 
     def _on_autoframe(self, on):

@@ -120,6 +120,14 @@ class PipelineController(QtCore.QObject):
         if self._processor:
             self._processor.set_realism(on)
 
+    def set_relight(self, on: bool):
+        if self._processor:
+            self._processor.set_relight(on)
+
+    def set_relight_strength(self, v: float):
+        if self._processor:
+            self._processor.set_relight_strength(v)
+
     def set_autoframe(self, on: bool):
         if self._processor:
             self._processor.set_autoframe(on)

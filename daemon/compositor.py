@@ -86,6 +86,18 @@ class Compositor:
         self.match_smooth = 0.9      # temporal EMA on the grade (anti-flicker)
         self._grade_gain: torch.Tensor | None = None
 
+        # ---- studio light: relight the subject (works in EVERY mode) --------
+        # Bad room lighting is most people's biggest webcam problem. This grades
+        # the *subject* (not the background) toward a well-lit look, independent
+        # of what's behind them: auto-exposure lifts a dark face toward a bright
+        # target, auto white-balance kills ugly colour casts (orange bulbs, cheap
+        # LED green), and a gentle contrast S-curve adds pop. Gains are clamped
+        # (lift, never blow out) and smoothed over time (no flicker).
+        self.relight = True
+        self.relight_strength = 0.6   # 0..1 overall intensity
+        self.relight_target = 0.52    # target subject luminance (0..1)
+        self._relight_gain: torch.Tensor | None = None
+
         # ---- finishing (applies in every mode) ------------------------------
         self.vignette = 0.0          # 0..1 subtle edge darkening
         self._vig_mask: torch.Tensor | None = None
@@ -207,6 +219,57 @@ class Compositor:
                                 + (1 - self.match_smooth) * gain)
         return (fgr * self._grade_gain).clamp(0.0, 1.0)
 
+    def _relight(self, fgr: torch.Tensor, pha: torch.Tensor) -> torch.Tensor:
+        """Studio-light the subject: auto exposure + white balance + contrast.
+
+        Mode-independent — it only looks at the subject (alpha-weighted), so the
+        exact same lift works over a blur, an image, a colour, or the untouched
+        scene. Everything is clamped and temporally smoothed so a face is lifted,
+        never blown out, and never flickers.
+        """
+        if not self.relight or self.relight_strength <= 0:
+            return fgr
+        s = float(self.relight_strength)
+        eps = 1e-4
+        w = pha.sum() + eps
+        ch_mean = (fgr * pha).sum(dim=(1, 2), keepdim=True) / w   # (3,1,1)
+        lum = ch_mean.mean().clamp_min(eps)
+
+        # auto white balance (gray-world on the subject), applied partially so
+        # skin keeps a little natural warmth instead of going clinical.
+        wb = (lum / ch_mean.clamp_min(eps)).clamp(0.7, 1.4)
+        wb = 1.0 + (wb - 1.0) * (0.6 * s)
+
+        # auto exposure toward the target brightness — this is what rescues a
+        # dark room; the clamp keeps a bright subject from being over-lifted.
+        exp = (self.relight_target / lum).clamp(0.5, 2.2)
+        exp = 1.0 + (exp - 1.0) * s
+
+        gain = wb * exp
+        if self._relight_gain is None or self._relight_gain.shape != gain.shape:
+            self._relight_gain = gain
+        else:
+            self._relight_gain = 0.9 * self._relight_gain + 0.1 * gain
+        out = (fgr * self._relight_gain).clamp(0.0, 1.0)
+
+        # gentle contrast around mid-grey for 'pop'
+        c = 0.18 * s
+        return ((out - 0.5) * (1.0 + c) + 0.5).clamp(0.0, 1.0)
+
+    def relight_passthrough(self, fgr: torch.Tensor, pha: torch.Tensor,
+                            src: torch.Tensor) -> torch.Tensor:
+        """Relight the subject, lay it back over the *original* scene.
+
+        Used when there's no background replacement (mode = off) but Studio Light
+        is on — background pixels stay exactly as captured; only the subject is
+        graded.
+        """
+        a = self._refine_matte(pha) if self.realism else pha
+        lit = self._relight(fgr, a)
+        out = lit * a + src * (1.0 - a)
+        out = self._vignette(out)
+        return out.clamp(0.0, 1.0)
+
     def _light_wrap(self, comp: torch.Tensor, bg: torch.Tensor,
                     pha: torch.Tensor) -> torch.Tensor:
         """Bleed softened background light around the subject edge (screen blend).
@@ -250,10 +313,12 @@ class Compositor:
         bg = self._background(src)
         if not self.realism:
             a = pha
+            fgr = self._relight(fgr, a)
             out = fgr * a + bg * (1.0 - a)
         else:
             a = self._refine_matte(pha)
             fgr = self._scene_match(fgr, bg, a)
+            fgr = self._relight(fgr, a)      # studio light has the final say
             out = fgr * a + bg * (1.0 - a)
             out = self._light_wrap(out, bg, a)
 
