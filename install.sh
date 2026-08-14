@@ -57,14 +57,32 @@ trap 'kill "$SUDO_KEEPALIVE" 2>/dev/null || true' EXIT
 ok "Authorized"
 
 # ---- system dependencies ----------------------------------------------------
+# What NVBroadcast actually needs at runtime (checked directly, so an unrelated
+# broken apt/DKMS state elsewhere on the system doesn't block us).
+have_requirements() {
+  command -v python3   >/dev/null 2>&1 || return 1
+  python3 -c 'import venv' >/dev/null 2>&1 || return 1
+  command -v v4l2-ctl  >/dev/null 2>&1 || return 1
+  modinfo v4l2loopback >/dev/null 2>&1 || return 1   # module built for this kernel
+  return 0
+}
+
 step "Installing system packages"
-sudo apt-get update -qq
+sudo apt-get update -qq || true
+# Attempt the install, but don't treat apt's exit code as the source of truth —
+# a pre-existing kernel/DKMS problem can fail apt even when our deps are present.
 sudo apt-get install -y \
   git python3 python3-venv python3-pip \
   v4l2loopback-dkms v4l-utils \
-  libxcb-cursor0 libxkbcommon0 \
-  || die "Package installation failed."
-ok "System packages ready"
+  libxcb-cursor0 libxkbcommon0 || APT_WARN=1
+
+if have_requirements; then
+  [[ "${APT_WARN:-0}" == "1" ]] && \
+    warn "apt reported errors (likely a pre-existing kernel/DKMS issue), but everything NVBroadcast needs is present — continuing."
+  ok "System packages ready"
+else
+  die "Missing required packages and apt couldn't install them. Fix the apt errors above (try: sudo apt --fix-broken install) then re-run."
+fi
 
 # ---- fetch the app ----------------------------------------------------------
 step "Fetching NVBroadcast"
