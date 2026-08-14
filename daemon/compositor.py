@@ -177,7 +177,13 @@ class Compositor:
 
         fg_ratio = fg_mean / fg_lum                              # chroma, luminance-free
         bg_ratio = bg_mean / bg_lum
-        target_ratio = fg_ratio * (1 - self.wb_strength) + bg_ratio * self.wb_strength
+        # A real coloured wall tints you a little, not fully. Back the white-
+        # balance match off as the background gets more saturated, so a solid
+        # green/teal/blue doesn't dye the subject that colour.
+        bg_sat = (bg_ratio.max() - bg_ratio.min()).clamp(0.0, 3.0)
+        sat_atten = 1.0 - ((bg_sat - 0.35) / 1.0).clamp(0.0, 1.0) * 0.85
+        wb_eff = self.wb_strength * sat_atten
+        target_ratio = fg_ratio * (1 - wb_eff) + bg_ratio * wb_eff
         target_lum = fg_lum * (1 - self.exposure_strength) + bg_lum * self.exposure_strength
         gain = (target_ratio * target_lum) / (fg_mean + eps)
         gain = gain.clamp(0.6, 1.7)
@@ -197,10 +203,17 @@ class Compositor:
         """
         if self.lightwrap_strength <= 0:
             return comp
+        # Ease off on saturated/solid backgrounds so the wrap doesn't read as
+        # colour spill on the edges.
+        bg_mean = bg.mean(dim=(1, 2), keepdim=True)
+        r = bg_mean / bg_mean.mean().clamp_min(1e-4)
+        sat = (r.max() - r.min()).clamp(0.0, 3.0)
+        strength = self.lightwrap_strength * (1.0 - ((sat - 0.35) / 1.0).clamp(0.0, 1.0) * 0.8)
+
         bg_soft = _separable_blur(bg, self.lightwrap_sigma)
         a_blur = _separable_blur(pha, self.lightwrap_sigma)
         band = (pha * (1.0 - a_blur)).clamp(0.0, 1.0)   # thin band just inside edge
-        w = (band * self.lightwrap_strength).clamp(0.0, 1.0)
+        w = (band * strength).clamp(0.0, 1.0)
         screened = 1.0 - (1.0 - comp) * (1.0 - bg_soft)
         return comp * (1.0 - w) + screened * w
 

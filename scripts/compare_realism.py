@@ -59,7 +59,10 @@ def main():
         print("FAIL: could not grab webcam frames"); return 1
     print(f"grabbed {len(frames)} frames")
 
-    mat = Matting("models/weights/rvm_mobilenetv3.pth")
+    import os
+    best = "models/weights/rvm_resnet50.pth"
+    mat = (Matting(best, variant="resnet50") if os.path.exists(best)
+           else Matting("models/weights/rvm_mobilenetv3.pth"))
     for f in frames[:-1]:            # warm up recurrent state
         mat.infer(_up(f, mat))
     src = _up(frames[-1], mat)
