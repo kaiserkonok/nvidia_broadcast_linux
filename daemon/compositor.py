@@ -62,6 +62,8 @@ class Compositor:
         self.color = (30, 30, 30)     # RGB solid bg
         self._bg_image: torch.Tensor | None = None   # (3,H,W) cached at frame size
         self._bg_src_hw: tuple[int, int] | None = None
+        self._bg_dof: torch.Tensor | None = None
+        self._bg_dof_val: float | None = None
 
         # ---- realism pass (Phase 2) -----------------------------------------
         # These turn a clean matte composite into one that reads as photoreal.
@@ -71,7 +73,6 @@ class Compositor:
         self.temporal = 0.0          # EMA on the matte (RVM is already stable)
         self.lightwrap_strength = 0.30   # bleed bg light around the silhouette
         self.lightwrap_sigma = 10.0      # how far the light wraps
-        self.grain = 0.0             # unify texture (std in [0,1], e.g. 0.004)
         self._pha_prev: torch.Tensor | None = None
 
         # ---- scene match: subject adopts the background's light -------------
@@ -89,6 +90,11 @@ class Compositor:
         self.vignette = 0.0          # 0..1 subtle edge darkening
         self._vig_mask: torch.Tensor | None = None
         self._vig_hw: tuple[int, int] | None = None
+        self.dof = 3.0               # defocus a replacement image like a real lens
+        # background-matched grain: a real camera lays the same sensor grain over
+        # subject AND background; a clean replacement image lacks it, betraying
+        # the composite. We add grain over the *background* to match the subject.
+        self.grain = 0.006
 
     # ---- background configuration -------------------------------------------
     def set_blur(self, sigma: float):
@@ -128,6 +134,12 @@ class Compositor:
         if self._bg_src_hw != (h, w):
             self._bg_resized = self._cover_fit(self._bg_image, h, w)
             self._bg_src_hw = (h, w)
+            self._bg_dof_val = None
+        if self.dof > 0:                     # lens-like defocus (cached)
+            if self._bg_dof_val != self.dof:
+                self._bg_dof = _separable_blur(self._bg_resized, self.dof)
+                self._bg_dof_val = self.dof
+            return self._bg_dof
         return self._bg_resized
 
     def _cover_fit(self, img: torch.Tensor, h: int, w: int) -> torch.Tensor:
@@ -237,7 +249,8 @@ class Compositor:
         """fgr (3,H,W), pha (1,H,W), src (3,H,W) -> out (3,H,W), all GPU float32."""
         bg = self._background(src)
         if not self.realism:
-            out = fgr * pha + bg * (1.0 - pha)
+            a = pha
+            out = fgr * a + bg * (1.0 - a)
         else:
             a = self._refine_matte(pha)
             fgr = self._scene_match(fgr, bg, a)
@@ -246,5 +259,6 @@ class Compositor:
 
         out = self._vignette(out)
         if self.grain > 0:
-            out = out + torch.randn_like(out) * self.grain
+            # grain the *background* to match the subject's sensor noise
+            out = out + torch.randn_like(out) * self.grain * (1.0 - a)
         return out.clamp(0.0, 1.0)

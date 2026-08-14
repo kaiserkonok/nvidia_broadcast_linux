@@ -122,6 +122,9 @@ class MattingProcessor(Processor):
     def set_grain(self, amount: float):
         self.compositor.grain = float(amount)
 
+    def set_dof(self, amount: float):
+        self.compositor.dof = float(amount)
+
     def process(self, rgb: np.ndarray) -> np.ndarray:
         # Run matting if we need a background effect OR auto-frame (which needs
         # the alpha to locate the subject).
