@@ -50,7 +50,10 @@ class MattingProcessor(Processor):
             weights, variant=variant, device=device,
             downsample_ratio=downsample_ratio, fp16=fp16,
         )
+        from .autoframe import AutoFrame
+
         self.compositor = Compositor(device=device)
+        self.autoframe = AutoFrame()
         self.enabled = True   # when False, process() is a passthrough
 
     # convenience passthroughs to configure the background live
@@ -78,8 +81,18 @@ class MattingProcessor(Processor):
         """Toggle the photoreal pass (edge feather + light-wrap)."""
         self.compositor.realism = bool(on)
 
+    def set_autoframe(self, on: bool):
+        self.autoframe.enabled = bool(on)
+        if not on:
+            self.autoframe.reset()
+
+    def set_zoom(self, zoom: float):
+        self.autoframe.zoom = float(zoom)
+
     def process(self, rgb: np.ndarray) -> np.ndarray:
-        if not self.enabled:
+        # Run matting if we need a background effect OR auto-frame (which needs
+        # the alpha to locate the subject).
+        if not self.enabled and not self.autoframe.enabled:
             return rgb
         torch = self.torch
         with torch.inference_mode():
@@ -92,7 +105,8 @@ class MattingProcessor(Processor):
                 .div_(255.0)
             )
             fgr, pha = self.matting.infer(src)
-            out = self.compositor.composite(fgr, pha, src[0])
+            out = self.compositor.composite(fgr, pha, src[0]) if self.enabled else src[0]
+            out = self.autoframe.apply(out, pha)
             out_u8 = (
                 out.clamp_(0.0, 1.0)
                 .mul_(255.0)
