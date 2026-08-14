@@ -1,0 +1,5 @@
+# Core video
+numpy
+opencv-python
+pyvirtualcam
+# torch/torchvision installed separately from cu128 index
