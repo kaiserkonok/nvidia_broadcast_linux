@@ -46,7 +46,10 @@ Virtual Camera”** in your video app.
   the silhouette, so you look *lit by* the scene, not glued onto it
 - 🎯 **Auto-Frame** — smoothly pans/zooms to keep you centered (no extra model —
   driven off the matte)
-- 🎚️ **Quality switch, vignette, framing** — Best (ResNet-50) / Balanced, all tunable
+- 🏆 **Quality tiers** — **Fast** (MobileNetV3) · **Best** (RVM ResNet-50, real-time)
+  · **Ultra** (BiRefNet SOTA — the most accurate masks, ~12 fps for recording/good light)
+- 🎞️ **Camera-match finishing** — lens depth-of-field on replaced backgrounds +
+  background-matched grain, vignette, framing — so it all reads as one camera
 - ⚡ **Real-time** — ~30 fps at 720p, GPU-resident end to end (RTX)
 - 🎛️ **Native desktop app** — live preview, controls, and a **system-tray** icon
   (closes to tray), remembers your settings
@@ -107,10 +110,11 @@ In OBS specifically: *Sources → Video Capture Device (V4L2) → Broadcast Virt
 - [x] One-command install / uninstall
 - [x] **Realism pass** — scene colour/exposure match, light-wrap, edge feathering
 - [x] **Auto-Frame** — smooth pan/zoom keeps you centered
-- [x] **Best/Balanced quality** (ResNet-50 / MobileNetV3) + vignette
+- [x] **Fast/Best/Ultra** matting tiers (MobileNetV3 / RVM ResNet-50 / BiRefNet)
+- [x] **Camera-match finishing** — depth-of-field, matched grain, vignette
 - [x] **Mic denoise** — RTX-Voice-style noise removal (DeepFilterNet) → virtual mic
 - [ ] Eye-contact / gaze correction
-- [ ] Matched grain & depth-of-field; TensorRT engine for even lower latency
+- [ ] TensorRT engine for even lower latency
 
 ---
 
