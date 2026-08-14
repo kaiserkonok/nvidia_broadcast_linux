@@ -3,3 +3,6 @@ numpy
 opencv-python
 pyvirtualcam
 # torch/torchvision installed separately from cu128 index
+
+# Web control panel
+flask

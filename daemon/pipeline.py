@@ -14,9 +14,12 @@ from .processor import Passthrough, Processor
 
 
 class Pipeline:
-    def __init__(self, cfg: Config, processor: Processor | None = None):
+    def __init__(self, cfg: Config, processor: Processor | None = None,
+                 on_frame=None):
         self.cfg = cfg
         self.processor = processor or Passthrough()
+        # Optional preview tap: called with each output RGB frame (H,W,3 uint8).
+        self.on_frame = on_frame
         self._stop = False
 
     def stop(self, *_):
@@ -53,6 +56,8 @@ class Pipeline:
                 proc_ms += (time.perf_counter() - ts) * 1000.0
 
                 vcam.send(out)
+                if self.on_frame is not None:
+                    self.on_frame(out)
                 n += 1
                 if n % self.cfg.log_every == 0:
                     dt = time.perf_counter() - t0

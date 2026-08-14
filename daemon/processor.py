@@ -51,18 +51,32 @@ class MattingProcessor(Processor):
             downsample_ratio=downsample_ratio, fp16=fp16,
         )
         self.compositor = Compositor(device=device)
+        self.enabled = True   # when False, process() is a passthrough
 
     # convenience passthroughs to configure the background live
     def set_blur(self, sigma: float):
+        self.enabled = True
         self.compositor.set_blur(sigma)
 
     def set_image(self, path: str):
+        self.enabled = True
         self.compositor.set_image(path)
 
     def set_color(self, rgb):
+        self.enabled = True
         self.compositor.set_color(rgb)
 
+    def set_mode(self, mode: str):
+        """mode: none | blur | image | color (keeps existing per-mode params)."""
+        if mode == "none":
+            self.enabled = False
+        else:
+            self.enabled = True
+            self.compositor.mode = mode
+
     def process(self, rgb: np.ndarray) -> np.ndarray:
+        if not self.enabled:
+            return rgb
         torch = self.torch
         with torch.inference_mode():
             src = (
