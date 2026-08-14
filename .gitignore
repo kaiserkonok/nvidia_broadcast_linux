@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+models/weights/*
+models/engines/*
+!models/weights/.gitkeep
+!models/engines/.gitkeep
+*.onnx
+*.engine
+*.pth
+.DS_Store
