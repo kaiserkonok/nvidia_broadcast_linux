@@ -1,48 +1,122 @@
-# nvidiabroadcast-linux
+<div align="center">
 
-NVIDIA Broadcast-style real-time camera/mic processing for Linux.
+# 🎥 NVBroadcast for Linux
 
-Goal: background replace/blur that **feels real** (alpha matting, no color spill,
-no flicker, scene-integrated) + audio denoise, exposed as a virtual camera
-(v4l2loopback) and virtual mic (PipeWire null sink) usable in any app.
+### Real-time, **real-looking** virtual background for any Linux app.
 
-## Layout
-- `daemon/` – video pipeline: capture -> matting -> composite -> v4l2loopback
-- `audio/`  – PipeWire mic -> DeepFilterNet denoise -> virtual mic (planned)
-- `models/` – model weights + TensorRT engine cache
-- `app/`    – native desktop app (Qt window + system tray)
-- `ui/`     – optional headless web control panel (Flask) — `python -m ui`
-- `scripts/`– setup, launchers, camera/loopback config
+A from-scratch, open-source take on NVIDIA Broadcast — GPU-accelerated background
+blur & replacement with **soft, film-quality edges** (real alpha matting, not a
+cheap cut-out), served to Zoom, Meet, OBS, Discord and anything else as a normal webcam.
 
-## Usage
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-Linux-informational.svg)
+![GPU](https://img.shields.io/badge/GPU-NVIDIA%20RTX-76b900.svg)
+![Python](https://img.shields.io/badge/python-3.10%2B-3776ab.svg)
 
-**Install (once):** add the app to your menu:
+<!-- Add a demo here: drop a short screen-capture at docs/demo.gif and uncomment:
+<img src="docs/demo.gif" width="720" alt="NVBroadcast demo">
+-->
+
+</div>
+
+---
+
+## ⚡ Install
 
 ```bash
-./scripts/install_desktop.sh   # adds "NVBroadcast" to your app menu
+curl -fsSL https://raw.githubusercontent.com/kaiserkonok/nvidia_broadcast_linux/master/install.sh | bash
 ```
 
-**Just launch NVBroadcast** from your app menu (or `./scripts/run_app.sh`). It's a
-native window with a live preview + system-tray icon:
-- **Start/Stop Camera** – grabs the webcam only while active
-- **Background** – Off / Blur / Color / Image (native image picker, blur slider)
-- Closing the window hides it to the tray; **Quit** from the tray to exit
+That's it. It installs everything, adds **NVBroadcast** to your app menu, and sets
+up the virtual camera. Launch it, pick a background, and select **“Broadcast
+Virtual Camera”** in your video app.
 
-The app configures the virtual camera itself — the first time (or if the loopback
-ever needs repair) it shows a **graphical password prompt** (kernel module config,
-made persistent so it rarely asks again). No terminal needed.
+> Uninstall just as easily: **`nvbroadcast uninstall`**
 
-In OBS / Zoom / Meet / Discord pick the **"Broadcast Virtual Camera"**.
+---
 
-*(Headless/remote alternative: `./scripts/run_ui.sh` runs the same pipeline with a
-browser control panel instead of the native window.)*
+## ✨ Features
 
-In any app (OBS, Zoom, Meet, Discord) pick the **"Broadcast Virtual Camera"**.
-In OBS: *Sources -> Video Capture Device (V4L2) -> Broadcast Virtual Camera*
-(start NVBroadcast **before** opening OBS).
+- 🪄 **Background blur / replace / solid color** — switch live, no restart
+- 🧠 **Actually-real edges** — per-pixel alpha matting keeps individual hairs and
+  soft motion; the subject is decontaminated of background color spill, so it
+  doesn't look pasted on
+- ⚡ **Real-time** — ~30 fps at 720p, GPU-resident end to end (RTX)
+- 🎛️ **Native desktop app** — live preview, controls, and a **system-tray** icon
+  (closes to tray, like the real thing)
+- 🔌 **Works everywhere** — appears as a normal V4L2 webcam in OBS, Zoom, Meet,
+  Discord, browsers…
+- 🛠️ **Self-configuring** — sets up the `v4l2loopback` virtual camera for you, with
+  a graphical password prompt only when it truly needs one
 
-Optional: `AUTOSTART=1 ./scripts/install_desktop.sh` to launch the tray on login.
+---
 
-## Status
-Phase 0-1 done (real-time matting @30fps), web control panel, OBS-compatible
-virtual camera, system-tray desktop app. Next: Phase 2 realism pass; audio.
+## 🔬 How it looks real
+
+Cheap “virtual backgrounds” use a binary person/background mask → hard, jagged
+edges and chewed-off hair. NVBroadcast uses **video matting**:
+
+1. **Alpha matte, not a mask** — each pixel gets an opacity `0.0–1.0`, so hair
+   strands and soft edges blend naturally.
+2. **Foreground decontamination** — the model estimates your true foreground
+   color separately, removing the background color halo around your edges.
+3. **Temporal stability** — a recurrent model keeps the matte steady frame to
+   frame instead of shimmering.
+
+Powered by [Robust Video Matting](https://github.com/PeterL1n/RobustVideoMatting),
+composited on the GPU.
+
+---
+
+## 🖥️ Usage
+
+Open **NVBroadcast** from your app menu (or run `nvbroadcast`):
+
+- **Start/Stop Camera** — the webcam is used only while active
+- **Background** — Off · Blur (with strength) · Color · Image
+- Close the window to tuck it into the **tray**; **Quit** from the tray to exit
+
+Then in OBS / Zoom / Meet / Discord, choose **“Broadcast Virtual Camera.”**
+In OBS specifically: *Sources → Video Capture Device (V4L2) → Broadcast Virtual Camera*
+(start NVBroadcast **before** OBS).
+
+---
+
+## 📦 Requirements
+
+- Linux with a modern kernel (tested on Ubuntu 24.04 / GNOME)
+- **NVIDIA RTX GPU** + recent driver (CUDA 12.8-capable)
+- `apt`-based distro for the one-command installer (other distros: install
+  `v4l2loopback-dkms`, `v4l-utils`, `python3-venv` and run `scripts/run_app.sh`)
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Real-time background matting (blur / image / color)
+- [x] Native desktop app + system tray
+- [x] One-command install / uninstall
+- [ ] **Realism pass** — light-wrap, edge feathering, matched grain & depth-of-field
+- [ ] **Mic denoise** — RTX-Voice-style noise removal (DeepFilterNet) → virtual mic
+- [ ] Auto-frame & eye-contact
+- [ ] TensorRT engine for even lower latency
+
+---
+
+## 🧹 Uninstall
+
+```bash
+nvbroadcast uninstall
+```
+
+Removes the app, menu entry, launcher and virtual-camera config. (The shared
+`v4l2loopback` system package is left in place — remove it yourself if unused.)
+
+---
+
+## 🙏 Credits & License
+
+- Matting model: [Robust Video Matting](https://github.com/PeterL1n/RobustVideoMatting) (Peter Lin et al.)
+- Virtual camera: [v4l2loopback](https://github.com/umlaeute/v4l2loopback) · [pyvirtualcam](https://github.com/letmaik/pyvirtualcam)
+
+Licensed under **GPL-3.0** (the vendored matting model is GPL-3.0). See [LICENSE](LICENSE).
