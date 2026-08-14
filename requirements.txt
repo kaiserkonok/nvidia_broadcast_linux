@@ -6,3 +6,6 @@ pyvirtualcam
 
 # Web control panel
 flask
+
+# Native desktop app
+PySide6
