@@ -1,4 +1,10 @@
-"""Main capture -> process -> output loop with an FPS meter."""
+"""Main capture -> process -> output loop with an FPS meter.
+
+Capture runs in its own thread (ThreadedCamera) so GPU work never blocks on the
+webcam. Processing is wrapped so a single bad frame degrades to passthrough
+instead of killing the whole pipeline. Pacing comes solely from the camera
+(one fresh frame per iteration), so the virtual-cam output is not double-paced.
+"""
 from __future__ import annotations
 
 import signal
@@ -7,7 +13,7 @@ import time
 
 import cv2
 
-from .capture import Camera
+from .capture import ThreadedCamera
 from .config import Config
 from .output import VirtualCam
 from .processor import Passthrough, Processor
@@ -21,18 +27,29 @@ class Pipeline:
         # Optional preview tap: called with each output RGB frame (H,W,3 uint8).
         self.on_frame = on_frame
         self._stop = False
+        # live metrics (instantaneous, not cumulative-from-start)
+        self.fps = 0.0
+        self.proc_ms = 0.0
+        self._warned = False
 
     def stop(self, *_):
         self._stop = True
 
+    def _safe_process(self, rgb):
+        try:
+            return self.processor.process(rgb)
+        except Exception as e:  # never let one frame kill the loop
+            if not self._warned:
+                print(f"[pipeline] processor error (falling back to passthrough): {e}")
+                self._warned = True
+            return rgb
+
     def run(self):
-        # Signal handlers can only be installed from the main thread; the
-        # self-test runs the pipeline in a worker thread and stops it manually.
         if threading.current_thread() is threading.main_thread():
             signal.signal(signal.SIGINT, self.stop)
             signal.signal(signal.SIGTERM, self.stop)
 
-        cam = Camera(self.cfg).open()
+        cam = ThreadedCamera(self.cfg).open()
         w, h, fps = cam.actual
         fps = fps if fps and fps > 0 else self.cfg.fps
         print(f"[capture] {self.cfg.cam_device} -> {w}x{h} @ {fps:.0f}fps")
@@ -42,8 +59,7 @@ class Pipeline:
         print("[pipeline] running — Ctrl-C to stop")
 
         n = 0
-        t0 = time.perf_counter()
-        proc_ms = 0.0
+        t_prev = time.perf_counter()
         try:
             for rgb in cam.frames():
                 if self._stop:
@@ -52,19 +68,25 @@ class Pipeline:
                     rgb = cv2.flip(rgb, 1)
 
                 ts = time.perf_counter()
-                out = self.processor.process(rgb)
-                proc_ms += (time.perf_counter() - ts) * 1000.0
+                out = self._safe_process(rgb)
+                pm = (time.perf_counter() - ts) * 1000.0
 
-                vcam.send(out)
+                vcam.send(out, pace=False)          # camera already paces us
                 if self.on_frame is not None:
                     self.on_frame(out)
+
+                # instantaneous EMA metrics
+                now = time.perf_counter()
+                dt = now - t_prev
+                t_prev = now
+                self.proc_ms = 0.9 * self.proc_ms + 0.1 * pm
+                if dt > 0:
+                    self.fps = 0.9 * self.fps + 0.1 * (1.0 / dt)
+
                 n += 1
                 if n % self.cfg.log_every == 0:
-                    dt = time.perf_counter() - t0
-                    print(
-                        f"[pipeline] {n} frames | "
-                        f"{n / dt:5.1f} fps | proc {proc_ms / n:5.2f} ms/frame"
-                    )
+                    print(f"[pipeline] {n} frames | {self.fps:5.1f} fps "
+                          f"| proc {self.proc_ms:5.2f} ms/frame")
         finally:
             vcam.close()
             cam.close()

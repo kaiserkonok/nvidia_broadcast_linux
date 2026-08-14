@@ -94,9 +94,11 @@ class Compositor:
                 [c / 255.0 for c in self.color], device=self.device
             ).view(3, 1, 1)
             return col.expand(3, h, w)
-        # image: cover-fit to frame, cache the resized result
+        # image: cover-fit to frame, cache the resized result. If no image has
+        # been chosen yet, fall back to a blur so we never crash or show black.
+        if self._bg_image is None:
+            return _separable_blur(src, self.blur_sigma)
         if self._bg_src_hw != (h, w):
-            assert self._bg_image is not None, "call set_image() first"
             self._bg_resized = self._cover_fit(self._bg_image, h, w)
             self._bg_src_hw = (h, w)
         return self._bg_resized

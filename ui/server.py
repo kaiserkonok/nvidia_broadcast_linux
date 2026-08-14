@@ -40,20 +40,11 @@ class Engine:
 
         self._jpeg: bytes | None = None
         self._lock = threading.Lock()
-        self._fps = 0.0
-        self._t_last = time.perf_counter()
 
         self.pipeline = Pipeline(cfg, self.processor, on_frame=self._on_frame)
         self._thread: threading.Thread | None = None
 
     def _on_frame(self, rgb):
-        # rough EMA fps
-        now = time.perf_counter()
-        dt = now - self._t_last
-        self._t_last = now
-        if dt > 0:
-            self._fps = 0.9 * self._fps + 0.1 * (1.0 / dt)
-
         h, w = rgb.shape[:2]
         if w > self.preview_width:
             s = self.preview_width / w
@@ -70,7 +61,7 @@ class Engine:
 
     @property
     def fps(self) -> float:
-        return self._fps
+        return self.pipeline.fps
 
     def start(self):
         self._thread = threading.Thread(target=self.pipeline.run, daemon=True)
@@ -108,6 +99,7 @@ def create_app(engine: Engine) -> Flask:
         p = engine.processor
         return jsonify(
             fps=round(engine.fps, 1),
+            proc_ms=round(engine.pipeline.proc_ms, 1),
             enabled=p.enabled,
             mode=p.compositor.mode,
             blur=p.compositor.blur_sigma,

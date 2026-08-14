@@ -29,10 +29,13 @@ class VirtualCam:
         )
         return self
 
-    def send(self, rgb):
+    def send(self, rgb, pace: bool = True):
         assert self.cam is not None, "call open() first"
         self.cam.send(rgb)
-        self.cam.sleep_until_next_frame()
+        # Pace only if nothing upstream is already pacing us (e.g. a threaded
+        # camera that blocks until a fresh frame). Double-pacing halves the fps.
+        if pace:
+            self.cam.sleep_until_next_frame()
 
     def close(self):
         if self.cam is not None:
