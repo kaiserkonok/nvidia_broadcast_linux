@@ -38,12 +38,18 @@ Virtual Camera”** in your video app.
 ## ✨ Features
 
 - 🪄 **Background blur / replace / solid color** — switch live, no restart
-- 🧠 **Actually-real edges** — per-pixel alpha matting keeps individual hairs and
-  soft motion; the subject is decontaminated of background color spill, so it
-  doesn't look pasted on
+- 🧠 **Actually-real edges** — per-pixel alpha matting (RVM ResNet-50) keeps
+  individual hairs and soft motion; the subject is decontaminated of background
+  color spill, so it doesn't look pasted on
+- 🎨 **Scene light matching** — the subject adopts the background's white balance
+  and exposure (saturation-aware, so solid colors stay clean) + light-wrap around
+  the silhouette, so you look *lit by* the scene, not glued onto it
+- 🎯 **Auto-Frame** — smoothly pans/zooms to keep you centered (no extra model —
+  driven off the matte)
+- 🎚️ **Quality switch, vignette, framing** — Best (ResNet-50) / Balanced, all tunable
 - ⚡ **Real-time** — ~30 fps at 720p, GPU-resident end to end (RTX)
 - 🎛️ **Native desktop app** — live preview, controls, and a **system-tray** icon
-  (closes to tray, like the real thing)
+  (closes to tray), remembers your settings
 - 🎙️ **Mic noise removal** — RTX-Voice-style denoise (DeepFilterNet) exposed as a
   virtual microphone; kills keyboard, fan and room noise, keeps your voice natural
 - 🔌 **Works everywhere** — appears as a normal V4L2 webcam (and virtual mic) in
@@ -97,12 +103,14 @@ In OBS specifically: *Sources → Video Capture Device (V4L2) → Broadcast Virt
 ## 🗺️ Roadmap
 
 - [x] Real-time background matting (blur / image / color)
-- [x] Native desktop app + system tray
+- [x] Native desktop app + system tray + saved settings
 - [x] One-command install / uninstall
-- [x] **Realism pass** — light-wrap + edge feathering (color-match & grain next)
+- [x] **Realism pass** — scene colour/exposure match, light-wrap, edge feathering
+- [x] **Auto-Frame** — smooth pan/zoom keeps you centered
+- [x] **Best/Balanced quality** (ResNet-50 / MobileNetV3) + vignette
 - [x] **Mic denoise** — RTX-Voice-style noise removal (DeepFilterNet) → virtual mic
-- [ ] Auto-frame & eye-contact
-- [ ] TensorRT engine for even lower latency
+- [ ] Eye-contact / gaze correction
+- [ ] Matched grain & depth-of-field; TensorRT engine for even lower latency
 
 ---
 
