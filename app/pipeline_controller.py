@@ -133,8 +133,18 @@ class PipelineController(QtCore.QObject):
             self._processor.set_vignette(amount)
 
     def set_quality(self, quality: str):
-        # model reload is slow (~1-2s) — do it off the GUI thread
+        # model reload is slow (Ultra's first use downloads ~900MB) — off the GUI
+        # thread, with status feedback so it never looks frozen.
         def work():
-            if self._processor:
+            if not self._processor:
+                return
+            labels = {"balanced": "Fast", "best": "Best", "ultra": "Ultra"}
+            note = "downloading…" if quality == "ultra" else "loading…"
+            self.statusText.emit(f"{labels.get(quality, quality)} model {note}")
+            try:
                 self._processor.set_quality(quality)
+            except Exception as e:            # noqa: BLE001
+                self.error.emit(f"Couldn't load {quality} model: {e}")
+                return
+            self.statusText.emit("Running")
         threading.Thread(target=work, daemon=True).start()

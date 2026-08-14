@@ -141,12 +141,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         col.addSpacing(10)
         col.addWidget(self._h2("ENHANCE"))
-        self.realism_chk = QtWidgets.QCheckBox("Photoreal edges + colour match")
+        self.realism_chk = QtWidgets.QCheckBox("Photoreal edges")
         self.realism_chk.setChecked(True)
         self.realism_chk.setStyleSheet("color:#8b94a3;")
         col.addWidget(self.realism_chk)
 
-        self.autoframe_chk = QtWidgets.QCheckBox("Auto-Frame (keep me centered)")
+        self.autoframe_chk = QtWidgets.QCheckBox("Auto-Frame")
         self.autoframe_chk.setStyleSheet("color:#8b94a3;")
         col.addWidget(self.autoframe_chk)
 
@@ -171,24 +171,25 @@ class MainWindow(QtWidgets.QMainWindow):
         col.addWidget(self.vig_label)
         col.addWidget(self.vig_slider)
 
+        col.addSpacing(4)
+        col.addWidget(self._h2("QUALITY"))
         qrow = QtWidgets.QHBoxLayout()
-        qrow.addWidget(self._h2("QUALITY"))
+        qrow.setSpacing(6)
         self.q_bal = QtWidgets.QPushButton("Fast")
         self.q_best = QtWidgets.QPushButton("Best")
         self.q_ultra = QtWidgets.QPushButton("Ultra")
         self.q_bal.setToolTip("MobileNetV3 — lightest")
         self.q_best.setToolTip("RVM ResNet-50 — sharp edges, real-time")
-        self.q_ultra.setToolTip("BiRefNet — SOTA quality, ~12 fps (best for good light / recording)")
+        self.q_ultra.setToolTip("BiRefNet — SOTA quality, ~12 fps (first use downloads the model)")
         self.q_group = QtWidgets.QButtonGroup(self)
         for b, key in ((self.q_bal, "balanced"), (self.q_best, "best"), (self.q_ultra, "ultra")):
             b.setCheckable(True)
-            b.setMaximumHeight(26)
+            b.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding,
+                            QtWidgets.QSizePolicy.Policy.Fixed)
             self.q_group.addButton(b)
             b.clicked.connect(lambda _=False, k=key: self._on_quality(k))
+            qrow.addWidget(b)
         self.q_best.setChecked(True)
-        qrow.addWidget(self.q_bal)
-        qrow.addWidget(self.q_best)
-        qrow.addWidget(self.q_ultra)
         col.addLayout(qrow)
 
         col.addSpacing(10)
@@ -384,8 +385,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.denoise_chk.blockSignals(False)
         self.denoise_chk.setEnabled(True)
         self.denoise_chk.setText(
-            'Remove background noise  ·  pick “NVBroadcast Microphone”' if running
-            else "Remove background noise")
+            "Remove background noise  ✓" if running else "Remove background noise")
 
     @QtCore.Slot(str)
     def _on_error(self, msg):

@@ -38,11 +38,13 @@ if [[ -f /etc/modprobe.d/nvbroadcast-v4l2loopback.conf || \
   printf "  ${G}✓${X} virtual-camera config removed\n"
 fi
 
-# the app itself (venv + repo). Do this last; cd out first.
-cd "$HOME"
-rm -rf "$INSTALL_DIR"
+# Print everything BEFORE deleting, because this script lives inside INSTALL_DIR
+# and rm -rf removes it — nothing must run from the file after that.
 printf "  ${G}✓${X} removed %s\n" "$INSTALL_DIR"
-
 printf "\n${G}${B}NVBroadcast uninstalled.${X}\n"
 printf "${Y}Note:${X} the ${C}v4l2loopback-dkms${X} system package was left installed ${C}(other apps may use it)${X}.\n"
 printf "      Remove it yourself with: ${C}sudo apt remove v4l2loopback-dkms${X}\n\n"
+
+# The app itself (venv + repo) — the ABSOLUTE last action, from outside the dir.
+cd "$HOME"
+rm -rf "$INSTALL_DIR"

@@ -103,12 +103,15 @@ cd "$INSTALL_DIR"
 step "Building the Python environment"
 say "  ${DIM}This downloads PyTorch + CUDA (~3 GB). The progress bars below are live —${X}"
 say "  ${DIM}it's working even when a download sits at one line for a while.${X}"
-python3 -m venv .venv
-./.venv/bin/python -m pip install --upgrade -q pip
-./.venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
-./.venv/bin/pip install numpy opencv-python pyvirtualcam PySide6 flask
-# Ultra tier (BiRefNet) deps — the model itself downloads on first use
-./.venv/bin/pip install transformers timm einops kornia
+[[ -d .venv ]] || python3 -m venv .venv || die "Could not create the Python venv."
+./.venv/bin/python -m pip install --upgrade -q pip || true
+./.venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128 \
+  || die "PyTorch install failed — check your connection, then re-run this installer."
+./.venv/bin/pip install numpy opencv-python pyvirtualcam PySide6 flask \
+  || die "Python dependency install failed — check your connection, then re-run."
+# Ultra tier (BiRefNet) deps — OPTIONAL; never let these fail the whole install.
+./.venv/bin/pip install transformers timm einops kornia \
+  || warn "Ultra-tier deps didn't install (Fast/Best still work; Ultra can be added later)."
 ok "Python environment ready"
 
 # ---- model ------------------------------------------------------------------
@@ -149,7 +152,7 @@ case "\${1:-}" in
 esac
 EOF
 chmod +x "$BIN_DIR/nvbroadcast"
-./scripts/install_desktop.sh >/dev/null
+./scripts/install_desktop.sh >/dev/null || warn "Menu entry install had an issue; the 'nvbroadcast' command still works."
 ok "Installed 'nvbroadcast' command and menu entry"
 
 # ---- done -------------------------------------------------------------------
