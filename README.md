@@ -16,16 +16,20 @@ no flicker, scene-integrated) + audio denoise, exposed as a virtual camera
 
 ## Usage
 
-**First time (once):** configure the virtual camera for OBS/browsers. Run in a
-terminal so it can ask for your password (kernel module config, one time only —
-it installs a persistent config so it never asks again):
+**Install (once):** add the app to your menu:
 
 ```bash
-./scripts/run_ui.sh          # sets up the camera, then launches the web panel
-./scripts/install_desktop.sh # adds "NVBroadcast" to your app menu
+./scripts/install_desktop.sh   # adds "NVBroadcast" to your app menu
 ```
 
-**Every day:** launch **NVBroadcast** from your app menu (or `./scripts/run_tray.sh`).
+**Just launch NVBroadcast** from your app menu (or `./scripts/run_tray.sh`).
+The app configures the virtual camera itself — the first time (or if the loopback
+ever needs repair) it shows a **graphical password prompt** (kernel module config,
+made persistent so it rarely asks again). No terminal needed.
+
+*(Prefer a terminal? `./scripts/run_ui.sh` does the same setup then opens just the
+web control panel, asking for the password via sudo.)*
+
 It lives in the system tray:
 - **Start/Stop Camera** – grabs the webcam only while active
 - **Background** – Off / Blur / Color / Image

@@ -59,18 +59,20 @@ fi
 
 echo "[camera] a one-time password prompt is needed to configure the kernel camera module."
 
-# One sudo batch: persistent config + clean reload.
-sudo bash -s <<EOF
-set -e
-cat > "$MODPROBE_CONF" <<CONF
-# nvidiabroadcast-linux: OBS-compatible virtual camera
-options v4l2loopback video_nr=${VIDEO_NR} card_label="${CARD_LABEL}" exclusive_caps=1
-CONF
-echo v4l2loopback > "$LOAD_CONF"
-modprobe -r v4l2loopback 2>/dev/null || true
-modprobe v4l2loopback
-EOF
-rc=$?
+# Escalate to root. In a terminal use sudo; when launched from the tray (no tty)
+# use pkexec, which shows a graphical password dialog — so the desktop app is
+# fully self-sufficient and never needs a terminal.
+RELOAD="$PWD/scripts/camera_reload.sh"
+if [ -t 1 ] || [ -t 0 ]; then
+    sudo bash "$RELOAD" "$VIDEO_NR" "$CARD_LABEL"
+    rc=$?
+elif command -v pkexec >/dev/null 2>&1; then
+    pkexec /usr/bin/bash "$RELOAD" "$VIDEO_NR" "$CARD_LABEL"
+    rc=$?
+else
+    echo "[camera] need root but no terminal and no pkexec available." >&2
+    exit 1
+fi
 [[ $rc -eq 0 ]] || { echo "[camera] module reload failed (rc=$rc)"; exit 1; }
 
 # Pin the format so it survives producer disconnects (this version otherwise
