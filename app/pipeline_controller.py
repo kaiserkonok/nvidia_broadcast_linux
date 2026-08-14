@@ -115,3 +115,7 @@ class PipelineController(QtCore.QObject):
     def set_image(self, path: str):
         if self._processor:
             self._processor.set_image(path)
+
+    def set_realism(self, on: bool):
+        if self._processor:
+            self._processor.set_realism(on)

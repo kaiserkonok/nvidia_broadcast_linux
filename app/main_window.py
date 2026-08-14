@@ -131,6 +131,12 @@ class MainWindow(QtWidgets.QMainWindow):
         ib.addWidget(self.image_btn)
         col.addWidget(self.image_box)
 
+        col.addSpacing(6)
+        self.realism_chk = QtWidgets.QCheckBox("Photoreal edges (light-wrap + feather)")
+        self.realism_chk.setChecked(True)
+        self.realism_chk.setStyleSheet("color:#8b94a3;")
+        col.addWidget(self.realism_chk)
+
         col.addStretch(1)
         hint = QtWidgets.QLabel(
             "In OBS / Zoom / Meet pick “Broadcast Virtual Camera”.")
@@ -151,6 +157,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.start_btn.clicked.connect(self._toggle)
         self.blur_slider.valueChanged.connect(self._on_blur)
         self.image_btn.clicked.connect(self._choose_image)
+        self.realism_chk.toggled.connect(self.controller.set_realism)
 
         c = self.controller
         c.frameReady.connect(self._on_frame)

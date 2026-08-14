@@ -63,6 +63,17 @@ class Compositor:
         self._bg_image: torch.Tensor | None = None   # (3,H,W) cached at frame size
         self._bg_src_hw: tuple[int, int] | None = None
 
+        # ---- realism pass (Phase 2) -----------------------------------------
+        # These turn a clean matte composite into one that reads as photoreal.
+        self.realism = True
+        self.shrink = 1.0            # erode matte inward (px) to kill halo
+        self.feather_sigma = 1.2     # soften the alpha edge
+        self.temporal = 0.0          # EMA on the matte (RVM is already stable)
+        self.lightwrap_strength = 0.30   # bleed bg light around the silhouette
+        self.lightwrap_sigma = 10.0      # how far the light wraps
+        self.grain = 0.0             # unify texture (std in [0,1], e.g. 0.004)
+        self._pha_prev: torch.Tensor | None = None
+
     # ---- background configuration -------------------------------------------
     def set_blur(self, sigma: float):
         self.mode = "blur"
@@ -112,10 +123,51 @@ class Compositor:
         top, left = (nh - h) // 2, (nw - w) // 2
         return r[:, top:top + h, left:left + w].contiguous()
 
+    # ---- realism stages -----------------------------------------------------
+    def _refine_matte(self, pha: torch.Tensor) -> torch.Tensor:
+        """Erode slightly + feather the alpha edge (and optional temporal EMA)."""
+        a = pha
+        if self.temporal > 0:
+            if self._pha_prev is None or self._pha_prev.shape != a.shape:
+                self._pha_prev = a
+            a = self.temporal * self._pha_prev + (1.0 - self.temporal) * a
+            self._pha_prev = a
+        if self.shrink > 0:
+            k = int(self.shrink) * 2 + 1
+            # morphological erosion = -maxpool(-a): pulls the edge inward so the
+            # feather sits on the true boundary instead of leaving a bg halo.
+            a = -F.max_pool2d(-a.unsqueeze(0), k, stride=1, padding=k // 2)[0]
+        if self.feather_sigma > 0:
+            a = _separable_blur(a, self.feather_sigma)
+        return a.clamp(0.0, 1.0)
+
+    def _light_wrap(self, comp: torch.Tensor, bg: torch.Tensor,
+                    pha: torch.Tensor) -> torch.Tensor:
+        """Bleed softened background light around the subject edge (screen blend).
+
+        The subject then looks lit by the scene instead of pasted onto it.
+        """
+        if self.lightwrap_strength <= 0:
+            return comp
+        bg_soft = _separable_blur(bg, self.lightwrap_sigma)
+        a_blur = _separable_blur(pha, self.lightwrap_sigma)
+        band = (pha * (1.0 - a_blur)).clamp(0.0, 1.0)   # thin band just inside edge
+        w = (band * self.lightwrap_strength).clamp(0.0, 1.0)
+        screened = 1.0 - (1.0 - comp) * (1.0 - bg_soft)
+        return comp * (1.0 - w) + screened * w
+
     # ---- compositing --------------------------------------------------------
     @torch.inference_mode()
     def composite(self, fgr: torch.Tensor, pha: torch.Tensor,
                   src: torch.Tensor) -> torch.Tensor:
         """fgr (3,H,W), pha (1,H,W), src (3,H,W) -> out (3,H,W), all GPU float32."""
         bg = self._background(src)
-        return fgr * pha + bg * (1.0 - pha)
+        if not self.realism:
+            return (fgr * pha + bg * (1.0 - pha)).clamp(0.0, 1.0)
+
+        a = self._refine_matte(pha)
+        out = fgr * a + bg * (1.0 - a)
+        out = self._light_wrap(out, bg, a)
+        if self.grain > 0:
+            out = (out + torch.randn_like(out) * self.grain).clamp(0.0, 1.0)
+        return out.clamp(0.0, 1.0)

@@ -74,6 +74,10 @@ class MattingProcessor(Processor):
             self.enabled = True
             self.compositor.mode = mode
 
+    def set_realism(self, on: bool):
+        """Toggle the photoreal pass (edge feather + light-wrap)."""
+        self.compositor.realism = bool(on)
+
     def process(self, rgb: np.ndarray) -> np.ndarray:
         if not self.enabled:
             return rgb
