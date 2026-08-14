@@ -73,8 +73,13 @@ EOF
 rc=$?
 [[ $rc -eq 0 ]] || { echo "[camera] module reload failed (rc=$rc)"; exit 1; }
 
+# Pin the format so it survives producer disconnects (this version otherwise
+# resets to an unusable state between start/stop). No sudo needed. Set BEFORE
+# the probe negotiates a format, so that format gets kept.
+v4l2-ctl -d "$DEV" -c keep_format=1 2>/dev/null || true
+
 if probe_producer; then
-    echo "[camera] $DEV ready (exclusive_caps=1) — persistent across reboots"
+    echo "[camera] $DEV ready (exclusive_caps=1, keep_format=1) — stable across start/stop"
     exit 0
 fi
 echo "[camera] ERROR: device still not usable after reload." >&2

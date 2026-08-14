@@ -49,18 +49,20 @@ class Pipeline:
             signal.signal(signal.SIGINT, self.stop)
             signal.signal(signal.SIGTERM, self.stop)
 
-        cam = ThreadedCamera(self.cfg).open()
-        w, h, fps = cam.actual
-        fps = fps if fps and fps > 0 else self.cfg.fps
-        print(f"[capture] {self.cfg.cam_device} -> {w}x{h} @ {fps:.0f}fps")
-
-        vcam = VirtualCam(self.cfg, w, h, fps).open()
-        print(f"[output]  -> {self.cfg.out_device} ({w}x{h} @ {fps:.0f}fps)")
-        print("[pipeline] running — Ctrl-C to stop")
-
+        cam = None
+        vcam = None
         n = 0
-        t_prev = time.perf_counter()
         try:
+            cam = ThreadedCamera(self.cfg).open()
+            w, h, fps = cam.actual
+            fps = fps if fps and fps > 0 else self.cfg.fps
+            print(f"[capture] {self.cfg.cam_device} -> {w}x{h} @ {fps:.0f}fps")
+
+            vcam = VirtualCam(self.cfg, w, h, fps).open()
+            print(f"[output]  -> {self.cfg.out_device} ({w}x{h} @ {fps:.0f}fps)")
+            print("[pipeline] running — Ctrl-C to stop")
+
+            t_prev = time.perf_counter()
             for rgb in cam.frames():
                 if self._stop:
                     break
@@ -87,8 +89,13 @@ class Pipeline:
                 if n % self.cfg.log_every == 0:
                     print(f"[pipeline] {n} frames | {self.fps:5.1f} fps "
                           f"| proc {self.proc_ms:5.2f} ms/frame")
+        except Exception as e:
+            print(f"[pipeline] fatal: {e}")
         finally:
-            vcam.close()
-            cam.close()
+            # Close in order; guard each so a setup failure never leaks the webcam.
+            if vcam is not None:
+                vcam.close()
+            if cam is not None:
+                cam.close()
             self.processor.close()
             print(f"[pipeline] stopped after {n} frames")

@@ -54,10 +54,9 @@ class Tray:
         self._build_menu()
         self.ind.set_menu(self.menu)
 
-        # Auto-start the camera on launch (like opening NVIDIA Broadcast).
+        # Auto-start after the icon is up (defer so the tray appears instantly).
         if auto_start:
-            self.start_pipeline()
-            GLib.timeout_add(1000, self._poll_status)
+            GLib.timeout_add(200, self._startup)
 
     # ---- menu -------------------------------------------------------------
     def _build_menu(self):
@@ -98,6 +97,28 @@ class Tray:
 
         self.menu.show_all()
 
+    # ---- startup / camera readiness ---------------------------------------
+    def _startup(self):
+        # Make sure the virtual camera is usable. If it needs the one-time
+        # terminal setup (kernel reload w/ sudo), say so instead of failing mute.
+        if self._ensure_camera():
+            self.start_pipeline()
+            GLib.timeout_add(1000, self._poll_status)
+        else:
+            self.status_item.set_label("⚠ Run ./scripts/run_ui.sh once")
+            self.toggle_item.set_label("Start Camera")
+        return False  # one-shot
+
+    def _ensure_camera(self) -> bool:
+        try:
+            r = subprocess.run(
+                [os.path.join(PROJECT_ROOT, "scripts", "setup_camera.sh")],
+                cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=60,
+            )
+            return r.returncode == 0
+        except (OSError, subprocess.SubprocessError):
+            return False
+
     # ---- pipeline process -------------------------------------------------
     def running(self) -> bool:
         return self.proc is not None and self.proc.poll() is None
@@ -127,8 +148,11 @@ class Tray:
     def on_toggle(self, _):
         if self.running():
             self.stop_pipeline()
-        else:
+        elif self._ensure_camera():
             self.start_pipeline()
+        else:
+            self.status_item.set_label("⚠ Run ./scripts/run_ui.sh once")
+            return
         self._refresh_labels()
 
     def on_mode(self, item, key):
