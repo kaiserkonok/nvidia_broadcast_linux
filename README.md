@@ -1,10 +1,12 @@
 <div align="center">
 
-<img src="assets/banner.svg" alt="NVBroadcast for Linux" width="840">
+<img src="assets/banner.svg" alt="NVBroadcast — NVIDIA Broadcast for Linux" width="840">
 
 <br>
 
-**NVIDIA Broadcast, rebuilt for Linux** — GPU background blur & replacement with
+# 🎥 NVIDIA Broadcast for Linux
+
+**The open-source one — built from scratch.** GPU background blur & replacement with
 **film-quality edges** (real alpha matting, not a cheap cut-out), an AI **Studio
 Light** that fixes bad room lighting, and **RTX-Voice-style mic denoise** — served
 to Zoom, Meet, OBS, Discord and anything else as a normal webcam + microphone.
