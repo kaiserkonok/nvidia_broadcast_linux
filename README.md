@@ -28,13 +28,9 @@ to Zoom, Meet, OBS, Discord and anything else as a normal webcam + microphone.
 
 <div align="center">
 
-<!--
-  ★ THE #1 THING THAT WINS STARS: a real demo.
-  Record a 6–10s clip (raw webcam → blur → replaced bg, turning your head so the
-  edges show; then toggle mic denoise), export it as assets/demo.gif, and swap the
-  line below for:   <img src="assets/demo.gif" alt="NVBroadcast demo" width="840">
--->
-<img src="assets/demo-placeholder.svg" alt="NVBroadcast — before / after" width="840">
+https://github.com/user-attachments/assets/f09f5b3c-cf84-4e67-b22c-ec1dfd4a24bc
+
+<em>NVBroadcast running live on Linux — background modes, the Studio backdrop, and Studio Light. Real-time on an RTX card.</em>
 
 </div>
 
