@@ -90,19 +90,25 @@ class MainWindow(QtWidgets.QMainWindow):
 
         col.addSpacing(6)
         col.addWidget(self._h2("BACKGROUND"))
-        modes = QtWidgets.QHBoxLayout()
+        modes = QtWidgets.QGridLayout()
+        modes.setSpacing(6)
         self.mode_group = QtWidgets.QButtonGroup(self)
         self.mode_buttons = {}
-        for label, key in [("Off", "none"), ("Blur", "blur"),
-                           ("Color", "color"), ("Image", "image")]:
+        mode_items = [("Off", "none"), ("Blur", "blur"), ("Studio", "studio"),
+                      ("Color", "color"), ("Image", "image")]
+        for i, (label, key) in enumerate(mode_items):
             b = QtWidgets.QPushButton(label)
             b.setCheckable(True)
+            b.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding,
+                            QtWidgets.QSizePolicy.Policy.Fixed)
             if key == "blur":
                 b.setChecked(True)
+            if key == "studio":
+                b.setToolTip("Dark studio backdrop with a soft light behind you")
             self.mode_group.addButton(b)
             self.mode_buttons[key] = b
             b.clicked.connect(lambda _=False, k=key: self._on_mode(k))
-            modes.addWidget(b)
+            modes.addWidget(b, i // 3, i % 3)
         col.addLayout(modes)
 
         # blur controls

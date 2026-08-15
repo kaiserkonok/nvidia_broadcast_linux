@@ -63,6 +63,7 @@ nvbroadcast uninstall  # clean removal
 |  | Feature | What it does |
 |:-:|:--|:--|
 | 🪄 | **Blur · Replace · Color** | Switch background live — blur, any image, or a solid color. No restart. |
+| 🎬 | **Studio backdrop** | A *procedural* dark, shadowed studio: a soft pool of light that **follows you** (tracked off the matte) fading into shadow — reads as a real backdrop, not a color swap. |
 | 🧠 | **Real edges, not a cut-out** | Per-pixel **alpha matting** (RVM / BiRefNet) keeps individual hairs and soft motion, and **decontaminates** background color spill so you don't look pasted on. |
 | 💡 | **Studio Light** | AI auto-relight fixes bad room lighting on your **face** — auto-exposure, white-balance and contrast — in **every** mode, even with no background change. |
 | 🎨 | **Scene light matching** | On replaced backgrounds, the subject adopts the scene's white balance & exposure + light-wrap, so you look *lit by* the scene, not glued onto it. |

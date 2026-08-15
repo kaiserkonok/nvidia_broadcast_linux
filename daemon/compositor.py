@@ -57,9 +57,23 @@ def _separable_blur(img: torch.Tensor, sigma: float) -> torch.Tensor:
 class Compositor:
     def __init__(self, device: str = "cuda"):
         self.device = torch.device(device)
-        self.mode = "blur"            # blur | image | color
+        self.mode = "blur"            # blur | studio | image | color
         self.blur_sigma = 12.0
         self.color = (30, 30, 30)     # RGB solid bg
+
+        # ---- studio backdrop: a dark, spotlit seamless-paper look -----------
+        # A *procedural* photographic backdrop: near-black and cool, with a soft
+        # elliptical pool of light that sits behind the subject (tracked off the
+        # matte, so it follows you), plus a vertical falloff, corner vignette and
+        # a faint paper mottle. It reads as a real studio instead of a flat
+        # colour swap — and pairs perfectly with Studio Light on the face.
+        self.studio_base = (0.05, 0.06, 0.08)   # backdrop shadow colour
+        self.studio_peak = (0.17, 0.18, 0.21)   # light-pool colour
+        self.studio_glow = 1.0                  # 0..1.5 pool intensity
+        self._grid: tuple[torch.Tensor, torch.Tensor] | None = None
+        self._grid_hw: tuple[int, int] | None = None
+        self._studio_c: list[float] | None = None
+        self._studio_mottle: torch.Tensor | None = None
         self._bg_image: torch.Tensor | None = None   # (3,H,W) cached at frame size
         self._bg_src_hw: tuple[int, int] | None = None
         self._bg_dof: torch.Tensor | None = None
@@ -129,9 +143,64 @@ class Compositor:
         self.mode = "image"
 
     # ---- background resolution ----------------------------------------------
-    def _background(self, src: torch.Tensor) -> torch.Tensor:
+    def _studio_bg(self, src: torch.Tensor, pha: torch.Tensor) -> torch.Tensor:
+        """A dark studio backdrop with a soft light pool tracked to the subject."""
+        _, H, W = src.shape
+        dev = src.device
+        if self._grid_hw != (H, W):
+            yy = torch.linspace(0, 1, H, device=dev).view(H, 1).expand(H, W)
+            xx = torch.linspace(0, 1, W, device=dev).view(1, W).expand(H, W)
+            self._grid = (yy, xx)
+            self._grid_hw = (H, W)
+            self._studio_mottle = None
+        yy, xx = self._grid
+
+        # follow the subject: horizontal centroid, and a point a little *above* it
+        # so the pool sits behind the head/shoulders. Smoothed to avoid jitter.
+        a = pha
+        xs = torch.linspace(0, 1, W, device=dev)
+        ys = torch.linspace(0, 1, H, device=dev)
+        colx = a.sum(dim=(0, 1))                       # (W,) mass per column
+        rowy = a.sum(dim=(0, 2))                        # (H,) mass per row
+        cx = float((colx * xs).sum() / colx.sum().clamp_min(1e-4))
+        cy = float((rowy * ys).sum() / rowy.sum().clamp_min(1e-4)) - 0.12
+        if self._studio_c is None:
+            self._studio_c = [cx, cy]
+        else:
+            self._studio_c[0] = 0.85 * self._studio_c[0] + 0.15 * cx
+            self._studio_c[1] = 0.85 * self._studio_c[1] + 0.15 * cy
+        lx, ly = self._studio_c
+
+        # soft elliptical light pool (wider than tall, like a real backdrop)
+        dx = (xx - lx) / 0.42
+        dy = (yy - ly) / 0.36
+        glow = (torch.exp(-(dx * dx + dy * dy) * 1.5) * self.studio_glow).clamp(0.0, 1.0)
+
+        base = torch.tensor(self.studio_base, device=dev).view(3, 1, 1)
+        peak = torch.tensor(self.studio_peak, device=dev).view(3, 1, 1)
+        bg = base + (peak - base) * glow.unsqueeze(0)
+
+        # darker toward the very top; gentle corner vignette
+        bg = bg * (1.0 - 0.32 * (1.0 - yy)).unsqueeze(0)
+        vig = 1.0 - (((xx - 0.5) ** 2 / 0.5 + (yy - 0.55) ** 2 / 0.6) - 0.55).clamp(0.0, 1.0) * 0.55
+        bg = bg * vig.unsqueeze(0)
+
+        # faint low-frequency mottle so it isn't a dead-flat gradient
+        if self._studio_mottle is None:
+            n = torch.randn(1, 1, max(2, H // 20), max(2, W // 20), device=dev)
+            n = F.interpolate(n, size=(H, W), mode="bicubic", align_corners=False)[0]
+            self._studio_mottle = (n - n.mean())
+        bg = bg * (1.0 + 0.05 * self._studio_mottle)
+        return bg.clamp(0.0, 1.0)
+
+    def _background(self, src: torch.Tensor,
+                    pha: torch.Tensor | None = None) -> torch.Tensor:
         """Return a (3,H,W) background matching `src`'s size."""
         c, h, w = src.shape
+        if self.mode == "studio":
+            if pha is None:
+                pha = torch.ones(1, h, w, device=src.device)
+            return self._studio_bg(src, pha)
         if self.mode == "blur":
             return _separable_blur(src, self.blur_sigma)
         if self.mode == "color":
@@ -310,7 +379,7 @@ class Compositor:
     def composite(self, fgr: torch.Tensor, pha: torch.Tensor,
                   src: torch.Tensor) -> torch.Tensor:
         """fgr (3,H,W), pha (1,H,W), src (3,H,W) -> out (3,H,W), all GPU float32."""
-        bg = self._background(src)
+        bg = self._background(src, pha)
         if not self.realism:
             a = pha
             fgr = self._relight(fgr, a)
