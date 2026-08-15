@@ -205,6 +205,28 @@ class MainWindow(QtWidgets.QMainWindow):
         rlb.addWidget(self.relight_slider)
         col.addWidget(self.relight_box)
 
+        self.cleanup_chk = QtWidgets.QCheckBox("Video Cleanup")
+        self.cleanup_chk.setToolTip("Brighten low light + remove webcam noise")
+        self.cleanup_chk.setStyleSheet("color:#8b94a3;")
+        col.addWidget(self.cleanup_chk)
+
+        self.cleanup_box = QtWidgets.QWidget()
+        clb = QtWidgets.QVBoxLayout(self.cleanup_box)
+        clb.setContentsMargins(0, 0, 0, 0)
+        self.ll_label = QtWidgets.QLabel("Low-light · 60%")
+        self.ll_label.setStyleSheet("color:#8b94a3;")
+        self.ll_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.ll_slider.setRange(0, 100)
+        self.ll_slider.setValue(60)
+        self.dn_label = QtWidgets.QLabel("Denoise · 50%")
+        self.dn_label.setStyleSheet("color:#8b94a3;")
+        self.dn_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.dn_slider.setRange(0, 100)
+        self.dn_slider.setValue(50)
+        for wdg in (self.ll_label, self.ll_slider, self.dn_label, self.dn_slider):
+            clb.addWidget(wdg)
+        col.addWidget(self.cleanup_box)
+
         self.autoframe_chk = QtWidgets.QCheckBox("Auto-Frame")
         self.autoframe_chk.setStyleSheet("color:#8b94a3;")
         col.addWidget(self.autoframe_chk)
@@ -282,6 +304,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.realism_chk.toggled.connect(self._on_realism)
         self.relight_chk.toggled.connect(self._on_relight_toggle)
         self.relight_slider.valueChanged.connect(self._on_relight_strength)
+        self.cleanup_chk.toggled.connect(self._on_cleanup_toggle)
+        self.ll_slider.valueChanged.connect(self._on_cleanup_ll)
+        self.dn_slider.valueChanged.connect(self._on_cleanup_dn)
         self.autoframe_chk.toggled.connect(self._on_autoframe)
         self.zoom_slider.valueChanged.connect(self._on_zoom)
         self.vig_slider.valueChanged.connect(self._on_vignette)
@@ -308,6 +333,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.relight_chk.setChecked(s.value("relight", True, type=bool))
         self.relight_slider.setValue(int(s.value("relight_strength", 60)))
         self.relight_box.setVisible(self.relight_chk.isChecked())
+        self.cleanup_chk.setChecked(s.value("cleanup", False, type=bool))
+        self.ll_slider.setValue(int(s.value("cleanup_ll", 60)))
+        self.dn_slider.setValue(int(s.value("cleanup_dn", 50)))
+        self.cleanup_box.setVisible(self.cleanup_chk.isChecked())
         self.autoframe_chk.setChecked(s.value("autoframe", False, type=bool))
         {"balanced": self.q_bal, "best": self.q_best, "ultra": self.q_ultra}.get(
             s.value("quality", "best"), self.q_best).setChecked(True)
@@ -326,6 +355,9 @@ class MainWindow(QtWidgets.QMainWindow):
         s.setValue("realism", self.realism_chk.isChecked())
         s.setValue("relight", self.relight_chk.isChecked())
         s.setValue("relight_strength", self.relight_slider.value())
+        s.setValue("cleanup", self.cleanup_chk.isChecked())
+        s.setValue("cleanup_ll", self.ll_slider.value())
+        s.setValue("cleanup_dn", self.dn_slider.value())
         s.setValue("autoframe", self.autoframe_chk.isChecked())
         s.setValue("quality", self._quality_key())
         s.setValue("mode", self._mode)
@@ -343,6 +375,9 @@ class MainWindow(QtWidgets.QMainWindow):
         c.set_realism(self.realism_chk.isChecked())
         c.set_relight(self.relight_chk.isChecked())
         c.set_relight_strength(self.relight_slider.value() / 100.0)
+        c.set_cleanup(self.cleanup_chk.isChecked())
+        c.set_cleanup_strength(self.ll_slider.value() / 100.0)
+        c.set_cleanup_denoise(self.dn_slider.value() / 100.0)
         c.set_autoframe(self.autoframe_chk.isChecked())
         c.set_zoom(self.zoom_slider.value() / 100.0)
         c.set_vignette(self.vig_slider.value() / 100.0)
@@ -408,6 +443,21 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_relight_strength(self, v):
         self.relight_label.setText(f"Light intensity · {v}%")
         self.controller.set_relight_strength(v / 100.0)
+        self._persist()
+
+    def _on_cleanup_toggle(self, on):
+        self.cleanup_box.setVisible(on)
+        self.controller.set_cleanup(on)
+        self._persist()
+
+    def _on_cleanup_ll(self, v):
+        self.ll_label.setText(f"Low-light · {v}%")
+        self.controller.set_cleanup_strength(v / 100.0)
+        self._persist()
+
+    def _on_cleanup_dn(self, v):
+        self.dn_label.setText(f"Denoise · {v}%")
+        self.controller.set_cleanup_denoise(v / 100.0)
         self._persist()
 
     def _on_autoframe(self, on):

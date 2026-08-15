@@ -67,6 +67,8 @@ class PipelineController(QtCore.QObject):
             proc = self._ensure_processor()
             if hasattr(proc, "matting"):
                 proc.matting.reset()
+            if hasattr(proc, "cleanup"):
+                proc.cleanup.reset()
 
             from daemon.pipeline import Pipeline
             self._pipeline = Pipeline(self.cfg, proc, on_frame=self._on_frame)
@@ -119,6 +121,18 @@ class PipelineController(QtCore.QObject):
     def set_realism(self, on: bool):
         if self._processor:
             self._processor.set_realism(on)
+
+    def set_cleanup(self, on: bool):
+        if self._processor:
+            self._processor.set_cleanup(on)
+
+    def set_cleanup_strength(self, v: float):
+        if self._processor:
+            self._processor.set_cleanup_strength(v)
+
+    def set_cleanup_denoise(self, v: float):
+        if self._processor:
+            self._processor.set_cleanup_denoise(v)
 
     def set_studio_glow(self, v: float):
         if self._processor:
