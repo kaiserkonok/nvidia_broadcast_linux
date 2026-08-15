@@ -1,0 +1,45 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NVBroadcast logo">
+  <defs>
+    <linearGradient id="brand" x1="80" y1="80" x2="432" y2="432" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2ecc71"/>
+      <stop offset="0.5" stop-color="#17c0b8"/>
+      <stop offset="1" stop-color="#54a0ff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.65">
+      <stop offset="0" stop-color="#17c0b8" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#17c0b8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- tile -->
+  <rect x="40" y="40" width="432" height="432" rx="104" fill="#0d0f14"/>
+  <rect x="40" y="40" width="432" height="432" rx="104" fill="url(#glow)"/>
+  <rect x="43" y="43" width="426" height="426" rx="101" fill="none" stroke="url(#brand)" stroke-width="6"/>
+
+  <!-- lens ring -->
+  <circle cx="256" cy="256" r="150" fill="none" stroke="url(#brand)" stroke-width="8" opacity="0.22"/>
+
+  <!-- aperture hexagon -->
+  <polygon points="360,256 308,346.07 204,346.07 152,256 204,165.93 308,165.93"
+           fill="none" stroke="url(#brand)" stroke-width="16" stroke-linejoin="round"/>
+  <polygon points="360,256 308,346.07 204,346.07 152,256 204,165.93 308,165.93"
+           fill="url(#brand)" opacity="0.10"/>
+
+  <!-- iris blades (pinwheel) -->
+  <g stroke="url(#brand)" stroke-width="12" stroke-linecap="round">
+    <line x1="360" y1="256" x2="289.16" y2="278.37"/>
+    <line x1="308" y1="346.07" x2="253.21" y2="295.90"/>
+    <line x1="204" y1="346.07" x2="220.05" y2="273.54"/>
+    <line x1="152" y1="256" x2="222.84" y2="233.63"/>
+    <line x1="204" y1="165.93" x2="258.79" y2="216.10"/>
+    <line x1="308" y1="165.93" x2="291.95" y2="238.46"/>
+  </g>
+
+  <!-- center + specular highlight -->
+  <circle cx="256" cy="256" r="34" fill="#0d0f14" stroke="url(#brand)" stroke-width="8"/>
+  <circle cx="245" cy="245" r="10" fill="#eafff6" opacity="0.9"/>
+
+  <!-- AI sparkle -->
+  <path d="M382 132 L390 158 L416 166 L390 174 L382 200 L374 174 L348 166 L374 158 Z"
+        fill="#eafff6"/>
+</svg>
