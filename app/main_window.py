@@ -227,6 +227,23 @@ class MainWindow(QtWidgets.QMainWindow):
             clb.addWidget(wdg)
         col.addWidget(self.cleanup_box)
 
+        self.eye_chk = QtWidgets.QCheckBox("Eye Contact  (beta)")
+        self.eye_chk.setToolTip("Experimental — nudges your eyes toward the camera")
+        self.eye_chk.setStyleSheet("color:#8b94a3;")
+        col.addWidget(self.eye_chk)
+
+        self.eye_box = QtWidgets.QWidget()
+        eb = QtWidgets.QVBoxLayout(self.eye_box)
+        eb.setContentsMargins(0, 0, 0, 0)
+        self.eye_label = QtWidgets.QLabel("Gaze strength · 50%")
+        self.eye_label.setStyleSheet("color:#8b94a3;")
+        self.eye_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.eye_slider.setRange(0, 100)
+        self.eye_slider.setValue(50)
+        eb.addWidget(self.eye_label)
+        eb.addWidget(self.eye_slider)
+        col.addWidget(self.eye_box)
+
         self.autoframe_chk = QtWidgets.QCheckBox("Auto-Frame")
         self.autoframe_chk.setStyleSheet("color:#8b94a3;")
         col.addWidget(self.autoframe_chk)
@@ -307,6 +324,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cleanup_chk.toggled.connect(self._on_cleanup_toggle)
         self.ll_slider.valueChanged.connect(self._on_cleanup_ll)
         self.dn_slider.valueChanged.connect(self._on_cleanup_dn)
+        self.eye_chk.toggled.connect(self._on_eye_toggle)
+        self.eye_slider.valueChanged.connect(self._on_eye_strength)
         self.autoframe_chk.toggled.connect(self._on_autoframe)
         self.zoom_slider.valueChanged.connect(self._on_zoom)
         self.vig_slider.valueChanged.connect(self._on_vignette)
@@ -337,6 +356,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ll_slider.setValue(int(s.value("cleanup_ll", 60)))
         self.dn_slider.setValue(int(s.value("cleanup_dn", 50)))
         self.cleanup_box.setVisible(self.cleanup_chk.isChecked())
+        self.eye_chk.setChecked(s.value("eyecontact", False, type=bool))
+        self.eye_slider.setValue(int(s.value("eyecontact_strength", 50)))
+        self.eye_box.setVisible(self.eye_chk.isChecked())
         self.autoframe_chk.setChecked(s.value("autoframe", False, type=bool))
         {"balanced": self.q_bal, "best": self.q_best, "ultra": self.q_ultra}.get(
             s.value("quality", "best"), self.q_best).setChecked(True)
@@ -358,6 +380,8 @@ class MainWindow(QtWidgets.QMainWindow):
         s.setValue("cleanup", self.cleanup_chk.isChecked())
         s.setValue("cleanup_ll", self.ll_slider.value())
         s.setValue("cleanup_dn", self.dn_slider.value())
+        s.setValue("eyecontact", self.eye_chk.isChecked())
+        s.setValue("eyecontact_strength", self.eye_slider.value())
         s.setValue("autoframe", self.autoframe_chk.isChecked())
         s.setValue("quality", self._quality_key())
         s.setValue("mode", self._mode)
@@ -378,6 +402,8 @@ class MainWindow(QtWidgets.QMainWindow):
         c.set_cleanup(self.cleanup_chk.isChecked())
         c.set_cleanup_strength(self.ll_slider.value() / 100.0)
         c.set_cleanup_denoise(self.dn_slider.value() / 100.0)
+        c.set_eyecontact(self.eye_chk.isChecked())
+        c.set_eyecontact_strength(self.eye_slider.value() / 100.0)
         c.set_autoframe(self.autoframe_chk.isChecked())
         c.set_zoom(self.zoom_slider.value() / 100.0)
         c.set_vignette(self.vig_slider.value() / 100.0)
@@ -458,6 +484,16 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_cleanup_dn(self, v):
         self.dn_label.setText(f"Denoise · {v}%")
         self.controller.set_cleanup_denoise(v / 100.0)
+        self._persist()
+
+    def _on_eye_toggle(self, on):
+        self.eye_box.setVisible(on)
+        self.controller.set_eyecontact(on)
+        self._persist()
+
+    def _on_eye_strength(self, v):
+        self.eye_label.setText(f"Gaze strength · {v}%")
+        self.controller.set_eyecontact_strength(v / 100.0)
         self._persist()
 
     def _on_autoframe(self, on):

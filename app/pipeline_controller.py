@@ -69,6 +69,8 @@ class PipelineController(QtCore.QObject):
                 proc.matting.reset()
             if hasattr(proc, "cleanup"):
                 proc.cleanup.reset()
+            if hasattr(proc, "eyecontact"):
+                proc.eyecontact.reset()
 
             from daemon.pipeline import Pipeline
             self._pipeline = Pipeline(self.cfg, proc, on_frame=self._on_frame)
@@ -121,6 +123,14 @@ class PipelineController(QtCore.QObject):
     def set_realism(self, on: bool):
         if self._processor:
             self._processor.set_realism(on)
+
+    def set_eyecontact(self, on: bool):
+        if self._processor:
+            self._processor.set_eyecontact(on)
+
+    def set_eyecontact_strength(self, v: float):
+        if self._processor:
+            self._processor.set_eyecontact_strength(v)
 
     def set_cleanup(self, on: bool):
         if self._processor:

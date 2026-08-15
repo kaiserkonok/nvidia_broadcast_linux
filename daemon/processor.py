@@ -46,6 +46,7 @@ class MattingProcessor(Processor):
         from .autoframe import AutoFrame
         from .cleanup import VideoCleanup
         from .compositor import Compositor
+        from .eyecontact import EyeContact
 
         self.torch = torch
         self.device = torch.device(device)
@@ -61,6 +62,7 @@ class MattingProcessor(Processor):
         self.compositor = Compositor(device=device)
         self.autoframe = AutoFrame()
         self.cleanup = VideoCleanup()
+        self.eyecontact = EyeContact()
         self.enabled = True   # when False, process() is a passthrough
 
     def _load(self, quality: str):
@@ -123,6 +125,13 @@ class MattingProcessor(Processor):
         """Toggle the photoreal pass (edge feather + light-wrap)."""
         self.compositor.realism = bool(on)
 
+    def set_eyecontact(self, on: bool):
+        """Toggle Eye Contact / gaze correction (experimental)."""
+        self.eyecontact.enabled = bool(on)
+
+    def set_eyecontact_strength(self, v: float):
+        self.eyecontact.strength = float(v)
+
     def set_cleanup(self, on: bool):
         """Toggle Video Cleanup (low-light + webcam noise removal)."""
         self.cleanup.enabled = bool(on)
@@ -167,6 +176,8 @@ class MattingProcessor(Processor):
         # Matting is needed for a background effect, Studio Light, or auto-frame
         # (each needs the alpha). Video Cleanup runs on the raw frame and needs
         # no matte, so a cleanup-only feed skips the model entirely.
+        if self.eyecontact.enabled:
+            rgb = self.eyecontact.apply(rgb)      # CPU warp before GPU upload
         need_matte = self.enabled or self.autoframe.enabled or self.compositor.relight
         if not need_matte and not self.cleanup.enabled:
             return rgb
@@ -208,3 +219,4 @@ class MattingProcessor(Processor):
 
     def close(self):
         self.matting.close()
+        self.eyecontact.close()
