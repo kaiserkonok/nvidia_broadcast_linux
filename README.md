@@ -96,6 +96,10 @@ nvbroadcast uninstall  # clean removal
 
 ## 🔬 How it looks real
 
+<div align="center">
+<img src="assets/edges.svg" alt="Segmentation mask vs. alpha matte" width="840">
+</div>
+
 Cheap “virtual backgrounds” use a binary person/background **mask** → hard, jagged
 edges and chewed-off hair. NVBroadcast uses **video matting**:
 

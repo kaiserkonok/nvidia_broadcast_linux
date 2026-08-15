@@ -14,13 +14,14 @@ os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
 from PySide6 import QtGui, QtWidgets  # noqa: E402
 
 from .audio import AudioController  # noqa: E402
-from .main_window import MainWindow  # noqa: E402
+from .main_window import MainWindow, brand_icon  # noqa: E402
 from .pipeline_controller import PipelineController  # noqa: E402
 
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("NVBroadcast")
+    app.setWindowIcon(brand_icon())
     app.setQuitOnLastWindowClosed(False)  # closing the window hides to tray
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -29,7 +30,7 @@ def main():
     win = MainWindow(controller, audio)
 
     # ---- system tray ------------------------------------------------------
-    icon = QtGui.QIcon.fromTheme("camera-web")
+    icon = brand_icon()
     tray = QtWidgets.QSystemTrayIcon(icon, app)
     tray.setToolTip("NVBroadcast")
     menu = QtWidgets.QMenu()

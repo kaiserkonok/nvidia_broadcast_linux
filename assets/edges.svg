@@ -1,0 +1,126 @@
+<svg width="1200" height="520" viewBox="0 0 1200 520" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Segmentation mask vs alpha matte">
+<defs>
+  <linearGradient id="brand" x1="0" y1="0" x2="1200" y2="520" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#2ecc71"/><stop offset="0.5" stop-color="#17c0b8"/><stop offset="1" stop-color="#54a0ff"/>
+  </linearGradient>
+  <radialGradient id="pbg" cx="0.5" cy="0.35" r="0.9">
+    <stop offset="0" stop-color="#25514c"/><stop offset="0.6" stop-color="#1a3346"/><stop offset="1" stop-color="#101826"/>
+  </radialGradient>
+  <linearGradient id="hair" x1="0" y1="210" x2="0" y2="90" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#20242c" stop-opacity="1"/>
+    <stop offset="0.55" stop-color="#20242c" stop-opacity="0.85"/>
+    <stop offset="1" stop-color="#20242c" stop-opacity="0"/>
+  </linearGradient>
+  <filter id="soft"><feGaussianBlur stdDeviation="1.4"/></filter>
+</defs>
+
+<rect width="1200" height="520" fill="#0d0f14"/>
+
+<!-- LEFT: binary mask -->
+<rect x="20" y="60" width="560" height="380" rx="16" fill="url(#pbg)"/>
+<path d="M 21 210 L 21.0 227 L 56.0 227 L 56.0 188 L 91.0 188 L 91.0 228 L 126.0 228 L 126.0 196 L 161.0 196 L 161.0 222 L 196.0 222 L 196.0 187 L 231.0 187 L 231.0 230 L 266.0 230 L 266.0 187 L 301.0 187 L 301.0 227 L 336.0 227 L 336.0 195 L 371.0 195 L 371.0 222 L 406.0 222 L 406.0 194 L 441.0 194 L 441.0 225 L 476.0 225 L 476.0 186 L 511.0 186 L 511.0 223 L 546.0 223 L 546.0 192 L 581.0 192 L 579 210 L 579 439 L 21 439 Z" fill="#20242c"/>
+<rect x="20" y="60" width="560" height="380" rx="16" fill="none" stroke="#e74c3c" stroke-width="2" opacity="0.6"/>
+
+<!-- RIGHT: alpha matte -->
+<rect x="640" y="60" width="560" height="380" rx="16" fill="url(#pbg)"/>
+<g filter="url(#soft)"><path d="M 641 210 Q 669.0 209.3999229155298 697.0 219.3999229155298 Q 725.0 211.68617157053833 753.0 221.68617157053833 Q 781.0 205.12855856280595 809.0 215.12855856280595 Q 837.0 194.68975468046176 865.0 204.68975468046176 Q 893.0 188.26963858801884 921.0 198.26963858801884 Q 949.0 190.72682614932816 977.0 200.72682614932816 Q 1005.0 200.20176680581218 1033.0 210.20176680581218 Q 1061.0 209.52401436618985 1089.0 219.52401436618985 Q 1117.0 211.63867773014104 1145.0 221.63867773014104 Q 1173.0 204.94542182290107 1201.0 214.94542182290107 L 1199 439 L 641 439 Z" fill="#20242c"/></g>
+<path d="M 647.5 211.7 Q 635.2 182.0 649.8 152.4" stroke="url(#hair)" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+<path d="M 654.8 206.5 Q 657.2 163.2 635.6 119.9" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 660.4 211.7 Q 661.6 186.4 656.9 161.1" stroke="url(#hair)" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+<path d="M 667.2 207.0 Q 658.5 182.9 670.4 158.7" stroke="url(#hair)" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+<path d="M 672.6 213.8 Q 673.5 169.0 672.4 124.3" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 680.8 213.8 Q 671.8 179.3 669.7 144.9" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 683.1 212.1 Q 681.6 172.3 676.2 132.5" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 690.4 210.2 Q 702.5 183.6 683.4 157.0" stroke="url(#hair)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M 693.8 209.4 Q 702.7 167.1 706.5 124.8" stroke="url(#hair)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<path d="M 702.4 208.7 Q 691.0 156.8 683.4 104.9" stroke="url(#hair)" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+<path d="M 705.8 212.8 Q 708.0 163.6 697.5 114.3" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 715.8 209.6 Q 728.1 154.1 709.1 98.6" stroke="url(#hair)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M 720.5 210.0 Q 727.2 181.3 711.1 152.5" stroke="url(#hair)" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+<path d="M 726.6 207.4 Q 720.3 180.7 722.2 154.1" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 732.9 209.8 Q 738.0 161.5 754.3 113.3" stroke="url(#hair)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+<path d="M 736.2 214.3 Q 722.5 188.3 743.1 162.2" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 743.4 209.2 Q 746.5 183.4 744.9 157.5" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 752.9 210.6 Q 759.6 152.6 759.7 94.5" stroke="url(#hair)" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+<path d="M 759.5 209.9 Q 756.7 162.7 762.1 115.5" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 762.2 207.1 Q 760.6 179.5 783.6 151.9" stroke="url(#hair)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M 766.5 212.1 Q 779.1 169.5 768.1 126.8" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 773.2 212.0 Q 785.9 177.0 779.1 141.9" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 778.7 209.1 Q 778.1 169.6 799.7 130.1" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 788.5 211.2 Q 793.9 161.5 787.6 111.9" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 795.8 213.6 Q 807.4 179.1 804.1 144.6" stroke="url(#hair)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+<path d="M 800.0 215.1 Q 800.5 191.4 815.2 167.8" stroke="url(#hair)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<path d="M 803.5 212.1 Q 807.3 170.5 803.6 128.8" stroke="url(#hair)" stroke-width="2.0" fill="none" stroke-linecap="round"/>
+<path d="M 812.7 214.0 Q 810.0 186.2 801.3 158.4" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 817.2 210.7 Q 825.3 161.5 838.7 112.2" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 823.9 209.5 Q 830.2 175.7 837.5 142.0" stroke="url(#hair)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M 826.8 210.8 Q 822.3 186.7 825.5 162.7" stroke="url(#hair)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M 836.0 212.4 Q 831.7 192.4 854.0 172.3" stroke="url(#hair)" stroke-width="2.0" fill="none" stroke-linecap="round"/>
+<path d="M 839.1 214.9 Q 830.7 179.3 848.4 143.8" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 848.3 210.6 Q 854.5 187.2 867.9 163.7" stroke="url(#hair)" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+<path d="M 851.0 211.9 Q 837.8 185.6 872.7 159.2" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 860.5 215.4 Q 859.8 170.9 864.7 126.4" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 865.9 207.0 Q 872.2 186.2 879.1 165.3" stroke="url(#hair)" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+<path d="M 869.5 206.3 Q 879.9 146.8 856.1 87.4" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 877.7 214.3 Q 878.9 163.8 870.0 113.2" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 885.2 211.2 Q 894.0 155.3 892.3 99.4" stroke="url(#hair)" stroke-width="2.0" fill="none" stroke-linecap="round"/>
+<path d="M 892.0 214.7 Q 892.3 189.5 876.7 164.3" stroke="url(#hair)" stroke-width="2.0" fill="none" stroke-linecap="round"/>
+<path d="M 896.5 212.2 Q 886.4 161.1 881.1 110.1" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 899.2 213.8 Q 898.7 166.5 900.6 119.2" stroke="url(#hair)" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+<path d="M 905.3 210.5 Q 894.0 182.9 885.1 155.2" stroke="url(#hair)" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+<path d="M 916.3 212.1 Q 929.6 189.5 908.6 167.0" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 918.7 208.5 Q 918.9 168.2 932.2 127.8" stroke="url(#hair)" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+<path d="M 928.3 208.0 Q 939.3 150.9 946.9 93.8" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 931.6 210.3 Q 936.4 174.6 923.5 138.9" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 937.0 212.4 Q 949.3 187.5 949.1 162.6" stroke="url(#hair)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<path d="M 942.7 206.9 Q 949.6 181.5 941.3 156.0" stroke="url(#hair)" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+<path d="M 948.2 215.9 Q 954.0 169.2 936.0 122.5" stroke="url(#hair)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<path d="M 955.8 209.4 Q 952.0 175.1 937.9 140.9" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 963.5 215.6 Q 957.8 180.2 964.3 144.9" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 970.9 208.7 Q 959.2 179.6 987.4 150.4" stroke="url(#hair)" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+<path d="M 972.5 212.8 Q 982.3 162.5 986.6 112.3" stroke="url(#hair)" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+<path d="M 979.9 209.3 Q 979.7 167.8 980.5 126.3" stroke="url(#hair)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+<path d="M 988.3 206.2 Q 981.8 178.8 1005.7 151.5" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 991.1 207.2 Q 984.5 162.9 978.9 118.6" stroke="url(#hair)" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+<path d="M 1001.5 206.4 Q 1005.0 169.7 1019.8 133.0" stroke="url(#hair)" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+<path d="M 1007.3 215.3 Q 998.3 156.6 996.8 97.8" stroke="url(#hair)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M 1010.9 208.7 Q 1015.7 180.5 1008.5 152.2" stroke="url(#hair)" stroke-width="2.0" fill="none" stroke-linecap="round"/>
+<path d="M 1019.7 215.8 Q 1019.8 194.3 998.5 172.8" stroke="url(#hair)" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+<path d="M 1021.2 212.6 Q 1025.4 174.7 1028.2 136.8" stroke="url(#hair)" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+<path d="M 1031.1 208.3 Q 1023.2 149.5 1022.7 90.7" stroke="url(#hair)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M 1037.1 215.8 Q 1050.8 166.7 1021.3 117.5" stroke="url(#hair)" stroke-width="2.0" fill="none" stroke-linecap="round"/>
+<path d="M 1038.0 206.6 Q 1036.0 161.5 1054.7 116.5" stroke="url(#hair)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M 1046.2 212.9 Q 1049.0 172.7 1066.9 132.5" stroke="url(#hair)" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+<path d="M 1051.1 209.3 Q 1047.3 178.5 1029.2 147.8" stroke="url(#hair)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M 1058.0 207.8 Q 1050.1 186.5 1074.8 165.1" stroke="url(#hair)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<path d="M 1062.6 213.8 Q 1055.5 182.6 1069.4 151.4" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 1073.0 209.0 Q 1070.0 183.2 1076.8 157.5" stroke="url(#hair)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M 1074.7 214.9 Q 1065.0 156.6 1090.2 98.3" stroke="url(#hair)" stroke-width="2.0" fill="none" stroke-linecap="round"/>
+<path d="M 1083.8 208.8 Q 1083.6 158.3 1093.5 107.7" stroke="url(#hair)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M 1087.1 210.3 Q 1087.5 157.3 1096.6 104.3" stroke="url(#hair)" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+<path d="M 1095.3 214.1 Q 1097.2 157.7 1106.4 101.3" stroke="url(#hair)" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+<path d="M 1102.5 212.4 Q 1115.2 160.5 1111.7 108.6" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 1104.6 210.5 Q 1101.2 165.0 1124.8 119.5" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 1110.5 210.6 Q 1103.9 169.3 1099.3 128.1" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 1122.1 213.5 Q 1122.8 157.5 1104.1 101.6" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 1127.4 208.3 Q 1134.5 154.5 1115.7 100.6" stroke="url(#hair)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M 1131.3 208.9 Q 1142.8 155.1 1112.7 101.2" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 1138.4 212.5 Q 1133.7 184.6 1142.8 156.7" stroke="url(#hair)" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+<path d="M 1144.4 215.7 Q 1144.0 190.4 1143.6 165.0" stroke="url(#hair)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M 1148.0 210.7 Q 1142.0 171.1 1157.2 131.5" stroke="url(#hair)" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+<path d="M 1158.7 210.7 Q 1147.1 168.8 1150.4 126.8" stroke="url(#hair)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+<path d="M 1159.2 209.9 Q 1173.1 169.6 1181.0 129.3" stroke="url(#hair)" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+<path d="M 1170.4 208.6 Q 1177.3 185.6 1152.4 162.6" stroke="url(#hair)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<path d="M 1174.5 209.7 Q 1163.6 164.4 1164.8 119.1" stroke="url(#hair)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M 1182.2 212.8 Q 1194.8 177.1 1167.2 141.3" stroke="url(#hair)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<path d="M 1187.3 209.3 Q 1176.7 172.7 1181.9 136.0" stroke="url(#hair)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<rect x="640" y="60" width="560" height="380" rx="16" fill="none" stroke="url(#brand)" stroke-width="2"/>
+
+<!-- labels -->
+<g font-family="'Segoe UI', Ubuntu, Helvetica, Arial, sans-serif">
+  <text x="40" y="94" font-size="22" font-weight="700" fill="#e74c3c">✗ Segmentation mask</text>
+  <text x="40" y="474" font-size="17" fill="#8b94a3">Hard binary edge — hair chopped into blocky steps</text>
+  <text x="660" y="94" font-size="22" font-weight="700" fill="#2ecc71">✓ NVBroadcast alpha matte</text>
+  <text x="660" y="474" font-size="17" fill="#8b94a3">Per-pixel opacity — every hair strand survives</text>
+</g>
+</svg>

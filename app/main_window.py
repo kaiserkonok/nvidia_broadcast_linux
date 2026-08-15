@@ -5,10 +5,26 @@ PipelineController via signals/slots — no video/GPU code lives here.
 """
 from __future__ import annotations
 
+import os
+
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from .audio import AudioController
 from .pipeline_controller import PipelineController
+
+_ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
+
+
+def brand_icon() -> QtGui.QIcon:
+    """The NVBroadcast logo as a QIcon (PNG for reliability, SVG fallback),
+    falling back to a stock theme icon if the assets are missing."""
+    for name in ("logo-256.png", "logo.svg"):
+        p = os.path.join(_ASSETS, name)
+        if os.path.exists(p):
+            ic = QtGui.QIcon(p)
+            if not ic.isNull():
+                return ic
+    return QtGui.QIcon.fromTheme("camera-web")
 
 COLORS = [
     (46, 204, 113), (0, 177, 64), (52, 152, 219), (155, 89, 182),
@@ -44,7 +60,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._last_color = COLORS[0]
         self._last_image = ""
         self.setWindowTitle("NVBroadcast")
-        self.setWindowIcon(QtGui.QIcon.fromTheme("camera-web"))
+        self.setWindowIcon(brand_icon())
         self.resize(1024, 600)
         self.setStyleSheet(STYLE)
         self._allow_close = False
