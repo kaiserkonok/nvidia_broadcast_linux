@@ -68,8 +68,6 @@ nvbroadcast uninstall  # clean removal
 | 💡 | **Studio Light** | AI auto-relight fixes bad room lighting on your **face** — auto-exposure, white-balance and contrast — in **every** mode, even with no background change. |
 | 🎨 | **Scene light matching** | On replaced backgrounds, the subject adopts the scene's white balance & exposure + light-wrap, so you look *lit by* the scene, not glued onto it. |
 | 🎯 | **Auto-Frame** | Smoothly pans & zooms to keep you centered — driven off the matte, no extra model. |
-| 🌙 | **Video Cleanup** | Brightens a dark room (adaptive, only when needed) and removes webcam sensor noise (motion-gated temporal + edge-aware spatial). |
-| 👁️ | **Eye Contact** *(beta)* | Nudges your eyes toward the camera so you look engaged while reading your screen. Experimental, off by default. |
 | 🎞️ | **Camera-match finishing** | Lens depth-of-field, matched sensor grain, and vignette so subject + background read as **one camera**. |
 | 🎙️ | **Mic noise removal** | RTX-Voice-style denoise (**DeepFilterNet**) as a virtual mic — kills keyboard, fan & room noise, keeps your voice natural. |
 | 🏆 | **Fast / Best / Ultra** | Quality tiers: MobileNetV3 · **RVM ResNet-50** (real-time) · **BiRefNet** (SOTA masks). |
@@ -89,8 +87,6 @@ nvbroadcast uninstall  # clean removal
 | Auto face relight | ❌ | ✅ **Studio Light** |
 | Scene light / color match | ❌ | ✅ |
 | Auto-Frame | ✅ | ✅ |
-| Eye Contact | ✅ | ✅ *(beta)* |
-| Video noise removal / low-light | ✅ | ✅ |
 | Mic noise removal | ✅ | ✅ DeepFilterNet |
 | Virtual cam in any app | ✅ | ✅ |
 | **Open source** | ❌ | ✅ GPL-3.0 |
@@ -164,9 +160,8 @@ runs on CPU via PipeWire. Non-`apt` distros: install `v4l2loopback-dkms`, `v4l-u
 - [x] Fast / Best / **Ultra** matting tiers (MobileNetV3 · RVM ResNet-50 · BiRefNet)
 - [x] Camera-match finishing — depth-of-field, matched grain, vignette
 - [x] Mic denoise — RTX-Voice-style noise removal (DeepFilterNet) → virtual mic
-- [x] **Video Cleanup** — low-light enhancement + webcam noise removal
-- [x] **Eye Contact** — gaze correction (beta)
-- [ ] TensorRT engine for even lower latency
+- [ ] Eye contact / gaze correction (with a trained redirection model)
+- [ ] Low-light enhancement & webcam denoise (always-visible, halo-free)
 - [ ] Room echo removal (audio dereverb)
 
 <br>

@@ -15,7 +15,6 @@ RAW_INSTALL="https://raw.githubusercontent.com/kaiserkonok/nvidia_broadcast_linu
 WEIGHTS_URL="https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth"
 WEIGHTS_URL_BEST="https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_resnet50.pth"
 DFPLUGIN_URL="https://github.com/Rikorose/DeepFilterNet/releases/download/v0.5.6/libdeep_filter_ladspa-0.5.6-x86_64-unknown-linux-gnu.so"
-FACEMESH_URL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
 
 # ---- pretty output ----------------------------------------------------------
 if [[ -t 1 ]]; then
@@ -110,12 +109,9 @@ say "  ${DIM}it's working even when a download sits at one line for a while.${X}
   || die "PyTorch install failed — check your connection, then re-run this installer."
 ./.venv/bin/pip install numpy opencv-python pyvirtualcam PySide6 flask \
   || die "Python dependency install failed — check your connection, then re-run."
-# Ultra tier (BiRefNet) + Eye Contact (mediapipe) deps — OPTIONAL; never let
-# these fail the whole install.
+# Ultra tier (BiRefNet) deps — OPTIONAL; never let these fail the whole install.
 ./.venv/bin/pip install transformers timm einops kornia \
   || warn "Ultra-tier deps didn't install (Fast/Best still work; Ultra can be added later)."
-./.venv/bin/pip install mediapipe \
-  || warn "Eye Contact deps didn't install (everything else still works)."
 ok "Python environment ready"
 
 # ---- model ------------------------------------------------------------------
@@ -127,11 +123,6 @@ fi
 if [[ ! -s models/weights/rvm_resnet50.pth ]]; then
   curl -fL --progress-bar -o models/weights/rvm_resnet50.pth "$WEIGHTS_URL_BEST" \
     || warn "Best-quality model download failed — will use the lighter one."
-fi
-# Eye Contact landmark model — OPTIONAL (feature stays off if absent).
-if [[ ! -s models/weights/face_landmarker.task ]]; then
-  curl -fL --progress-bar -o models/weights/face_landmarker.task "$FACEMESH_URL" \
-    || warn "Eye Contact model download failed (feature can be added later)."
 fi
 ok "Models ready"
 

@@ -7,7 +7,6 @@ cd "$(dirname "$0")/.."
 WEIGHTS_URL="https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth"
 WEIGHTS_URL_BEST="https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_resnet50.pth"
 DFPLUGIN_URL="https://github.com/Rikorose/DeepFilterNet/releases/download/v0.5.6/libdeep_filter_ladspa-0.5.6-x86_64-unknown-linux-gnu.so"
-FACEMESH_URL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
 
 echo "Updating NVBroadcast…"
 git fetch -q origin master
@@ -28,14 +27,12 @@ mkdir -p models/weights audio/lib
   curl -fL --progress-bar -o models/weights/rvm_resnet50.pth "$WEIGHTS_URL_BEST" || true
 [[ -s audio/lib/libdeep_filter_ladspa.so ]] || \
   curl -fL --progress-bar -o audio/lib/libdeep_filter_ladspa.so "$DFPLUGIN_URL" || true
-[[ -s models/weights/face_landmarker.task ]] || \
-  curl -fL --progress-bar -o models/weights/face_landmarker.task "$FACEMESH_URL" || true
 
-# Sync Python deps (cached -> fast; picks up anything new like Ultra / Eye Contact).
+# Sync Python deps (cached -> fast; picks up anything new like the Ultra tier).
 if [[ -x .venv/bin/pip ]]; then
     echo "Checking Python deps…"
     ./.venv/bin/pip install -q numpy opencv-python pyvirtualcam PySide6 flask \
-        transformers timm einops kornia mediapipe 2>/dev/null || true
+        transformers timm einops kornia 2>/dev/null || true
 fi
 
 echo "✓ Updated to $(git rev-parse --short HEAD). Relaunch NVBroadcast."

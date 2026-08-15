@@ -44,9 +44,7 @@ class MattingProcessor(Processor):
         import torch  # local import so Passthrough works without torch
 
         from .autoframe import AutoFrame
-        from .cleanup import VideoCleanup
         from .compositor import Compositor
-        from .eyecontact import EyeContact
 
         self.torch = torch
         self.device = torch.device(device)
@@ -61,8 +59,6 @@ class MattingProcessor(Processor):
 
         self.compositor = Compositor(device=device)
         self.autoframe = AutoFrame()
-        self.cleanup = VideoCleanup()
-        self.eyecontact = EyeContact()
         self.enabled = True   # when False, process() is a passthrough
 
     def _load(self, quality: str):
@@ -125,23 +121,6 @@ class MattingProcessor(Processor):
         """Toggle the photoreal pass (edge feather + light-wrap)."""
         self.compositor.realism = bool(on)
 
-    def set_eyecontact(self, on: bool):
-        """Toggle Eye Contact / gaze correction (experimental)."""
-        self.eyecontact.enabled = bool(on)
-
-    def set_eyecontact_strength(self, v: float):
-        self.eyecontact.strength = float(v)
-
-    def set_cleanup(self, on: bool):
-        """Toggle Video Cleanup (low-light + webcam noise removal)."""
-        self.cleanup.enabled = bool(on)
-
-    def set_cleanup_strength(self, v: float):
-        self.cleanup.strength = float(v)
-
-    def set_cleanup_denoise(self, v: float):
-        self.cleanup.denoise = float(v)
-
     def set_studio_glow(self, v: float):
         self.compositor.studio_glow = float(v)
 
@@ -173,13 +152,9 @@ class MattingProcessor(Processor):
         self.compositor.dof = float(amount)
 
     def process(self, rgb: np.ndarray) -> np.ndarray:
-        # Matting is needed for a background effect, Studio Light, or auto-frame
-        # (each needs the alpha). Video Cleanup runs on the raw frame and needs
-        # no matte, so a cleanup-only feed skips the model entirely.
-        if self.eyecontact.enabled:
-            rgb = self.eyecontact.apply(rgb)      # CPU warp before GPU upload
-        need_matte = self.enabled or self.autoframe.enabled or self.compositor.relight
-        if not need_matte and not self.cleanup.enabled:
+        # Run matting if we need a background effect, Studio Light, or auto-frame
+        # (each needs the alpha to locate the subject).
+        if not self.enabled and not self.autoframe.enabled and not self.compositor.relight:
             return rgb
         torch = self.torch
         with torch.inference_mode():
@@ -191,20 +166,15 @@ class MattingProcessor(Processor):
                 .float()
                 .div_(255.0)
             )
-            if self.cleanup.enabled:
-                src = self.cleanup.apply(src)     # clean the captured frame first
-            if not need_matte:
-                out = src[0]
+            fgr, pha = self.matting.infer(src)
+            if self.enabled:
+                out = self.compositor.composite(fgr, pha, src[0])
+            elif self.compositor.relight:
+                # no background change, but relight the subject over the scene
+                out = self.compositor.relight_passthrough(fgr, pha, src[0])
             else:
-                fgr, pha = self.matting.infer(src)
-                if self.enabled:
-                    out = self.compositor.composite(fgr, pha, src[0])
-                elif self.compositor.relight:
-                    # no background change, but relight the subject over the scene
-                    out = self.compositor.relight_passthrough(fgr, pha, src[0])
-                else:
-                    out = src[0]
-                out = self.autoframe.apply(out, pha)
+                out = src[0]
+            out = self.autoframe.apply(out, pha)
             out_u8 = (
                 out.clamp_(0.0, 1.0)
                 .mul_(255.0)
@@ -219,4 +189,3 @@ class MattingProcessor(Processor):
 
     def close(self):
         self.matting.close()
-        self.eyecontact.close()
