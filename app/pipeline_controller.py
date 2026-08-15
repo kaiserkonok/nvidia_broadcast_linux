@@ -120,6 +120,14 @@ class PipelineController(QtCore.QObject):
         if self._processor:
             self._processor.set_realism(on)
 
+    def set_studio_glow(self, v: float):
+        if self._processor:
+            self._processor.set_studio_glow(v)
+
+    def set_studio_warmth(self, v: float):
+        if self._processor:
+            self._processor.set_studio_warmth(v)
+
     def set_relight(self, on: bool):
         if self._processor:
             self._processor.set_relight(on)

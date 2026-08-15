@@ -70,6 +70,7 @@ class Compositor:
         self.studio_base = (0.05, 0.06, 0.08)   # backdrop shadow colour
         self.studio_peak = (0.17, 0.18, 0.21)   # light-pool colour
         self.studio_glow = 1.0                  # 0..1.5 pool intensity
+        self.studio_warmth = 0.0                # -1 cool .. 0 neutral .. +1 warm
         self._grid: tuple[torch.Tensor, torch.Tensor] | None = None
         self._grid_hw: tuple[int, int] | None = None
         self._studio_c: list[float] | None = None
@@ -191,6 +192,13 @@ class Compositor:
             n = F.interpolate(n, size=(H, W), mode="bicubic", align_corners=False)[0]
             self._studio_mottle = (n - n.mean())
         bg = bg * (1.0 + 0.05 * self._studio_mottle)
+
+        # warm/cool tint (tungsten studio vs. cool key light)
+        if self.studio_warmth != 0.0:
+            w = max(-1.0, min(1.0, self.studio_warmth))
+            tint = torch.tensor([1.0 + 0.18 * w, 1.0, 1.0 - 0.18 * w],
+                                device=dev).view(3, 1, 1)
+            bg = bg * tint
         return bg.clamp(0.0, 1.0)
 
     def _background(self, src: torch.Tensor,

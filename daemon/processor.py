@@ -121,6 +121,12 @@ class MattingProcessor(Processor):
         """Toggle the photoreal pass (edge feather + light-wrap)."""
         self.compositor.realism = bool(on)
 
+    def set_studio_glow(self, v: float):
+        self.compositor.studio_glow = float(v)
+
+    def set_studio_warmth(self, v: float):
+        self.compositor.studio_warmth = float(v)
+
     def set_relight(self, on: bool):
         """Toggle Studio Light (subject auto exposure/white-balance/contrast)."""
         self.compositor.relight = bool(on)

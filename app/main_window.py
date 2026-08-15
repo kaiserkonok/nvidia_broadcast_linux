@@ -161,6 +161,24 @@ class MainWindow(QtWidgets.QMainWindow):
         ib.addWidget(self.image_btn)
         col.addWidget(self.image_box)
 
+        # studio backdrop controls
+        self.studio_box = QtWidgets.QWidget()
+        sb = QtWidgets.QVBoxLayout(self.studio_box)
+        sb.setContentsMargins(0, 0, 0, 0)
+        self.glow_label = QtWidgets.QLabel("Studio glow · 100%")
+        self.glow_label.setStyleSheet("color:#8b94a3;")
+        self.glow_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.glow_slider.setRange(0, 150)     # 0..1.5
+        self.glow_slider.setValue(100)
+        self.warmth_label = QtWidgets.QLabel("Warmth · neutral")
+        self.warmth_label.setStyleSheet("color:#8b94a3;")
+        self.warmth_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.warmth_slider.setRange(-100, 100)   # cool .. warm
+        self.warmth_slider.setValue(0)
+        for wdg in (self.glow_label, self.glow_slider, self.warmth_label, self.warmth_slider):
+            sb.addWidget(wdg)
+        col.addWidget(self.studio_box)
+
         col.addSpacing(10)
         col.addWidget(self._h2("ENHANCE"))
         self.realism_chk = QtWidgets.QCheckBox("Photoreal edges")
@@ -259,6 +277,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.start_btn.clicked.connect(self._toggle)
         self.blur_slider.valueChanged.connect(self._on_blur)
         self.image_btn.clicked.connect(self._choose_image)
+        self.glow_slider.valueChanged.connect(self._on_glow)
+        self.warmth_slider.valueChanged.connect(self._on_warmth)
         self.realism_chk.toggled.connect(self._on_realism)
         self.relight_chk.toggled.connect(self._on_relight_toggle)
         self.relight_slider.valueChanged.connect(self._on_relight_strength)
@@ -280,6 +300,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def _restore(self):
         s = self.settings
         self.blur_slider.setValue(int(s.value("blur", 14)))
+        self.glow_slider.setValue(int(s.value("studio_glow", 100)))
+        self.warmth_slider.setValue(int(s.value("studio_warmth", 0)))
         self.vig_slider.setValue(int(s.value("vignette", 0)))
         self.zoom_slider.setValue(int(s.value("zoom", 115)))
         self.realism_chk.setChecked(s.value("realism", True, type=bool))
@@ -297,6 +319,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def _persist(self):
         s = self.settings
         s.setValue("blur", self.blur_slider.value())
+        s.setValue("studio_glow", self.glow_slider.value())
+        s.setValue("studio_warmth", self.warmth_slider.value())
         s.setValue("vignette", self.vig_slider.value())
         s.setValue("zoom", self.zoom_slider.value())
         s.setValue("realism", self.realism_chk.isChecked())
@@ -323,6 +347,8 @@ class MainWindow(QtWidgets.QMainWindow):
         c.set_zoom(self.zoom_slider.value() / 100.0)
         c.set_vignette(self.vig_slider.value() / 100.0)
         c.set_blur(float(self.blur_slider.value()))
+        c.set_studio_glow(self.glow_slider.value() / 100.0)
+        c.set_studio_warmth(self.warmth_slider.value() / 100.0)
         if self._mode == "color":
             c.set_color(self._last_color)
         elif self._mode == "image" and self._last_image:
@@ -348,6 +374,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.blur_box.setVisible(key == "blur")
         self.color_box.setVisible(key == "color")
         self.image_box.setVisible(key == "image")
+        self.studio_box.setVisible(key == "studio")
 
     def _on_blur(self, v):
         self.blur_label.setText(f"Blur strength · {v}")
@@ -357,6 +384,17 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_color(self, c):
         self._last_color = c
         self.controller.set_color(c)
+
+    def _on_glow(self, v):
+        self.glow_label.setText(f"Studio glow · {v}%")
+        self.controller.set_studio_glow(v / 100.0)
+        self._persist()
+
+    def _on_warmth(self, v):
+        tag = "neutral" if v == 0 else (f"warm +{v}" if v > 0 else f"cool {v}")
+        self.warmth_label.setText(f"Warmth · {tag}")
+        self.controller.set_studio_warmth(v / 100.0)
+        self._persist()
 
     def _on_realism(self, on):
         self.controller.set_realism(on)
